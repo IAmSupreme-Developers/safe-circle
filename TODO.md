@@ -54,3 +54,47 @@
 - [ ] Custom hardware tracker (earring, backpack clip, wristband form factors)
 - [ ] Tracker firmware — sends GPS pings over LTE/NB-IoT to Supabase
 - [ ] Device binding server — one-time code validation registry
+
+## Cell Tower Triangulation (Offline Location Fallback)
+> Fallback when GPS is unavailable or internet is down. Device stores pings locally and syncs when back online.
+
+### Implementation Steps
+
+**1. Native Capacitor plugin — read cell tower data**
+- Android: use `TelephonyManager.getAllCellInfo()` to get visible towers with `Cell ID`, `LAC`, `MCC`, `MNC`, `RSSI`
+- iOS: use `CTTelephonyNetworkInfo` (limited — only serving cell, no neighbours)
+- Wrap in a custom Capacitor plugin: `packages/capacitor-cell-info`
+
+**2. Tower coordinate database**
+- Download [OpenCelliD](https://opencellid.org) CSV for target region (e.g. Nigeria)
+- Filter to relevant MCC/MNC, convert to SQLite
+- Bundle as a read-only asset in the app (`assets/towers.db`)
+- Use `@capacitor-community/sqlite` to query it on-device
+
+**3. Weighted centroid triangulation**
+```
+For each visible tower with known coords (lat_i, lng_i) and signal strength RSSI_i:
+  weight_i = 1 / abs(RSSI_i)        ← stronger signal = higher weight
+  lat = Σ(lat_i × weight_i) / Σ(weight_i)
+  lng = Σ(lng_i × weight_i) / Σ(weight_i)
+```
+- Minimum 1 tower required (degrades gracefully to single-tower estimate)
+- Accuracy: ~300m urban, ~2km rural
+
+**4. Offline queue + sync**
+- When internet is unavailable: store `{ lat, lng, timestamp, source: 'cell' }` in localStorage or SQLite queue
+- On reconnect: flush queue to Supabase in order, mark each ping with `source` field so guardian app can show accuracy indicator
+
+**5. Location source priority**
+```
+Capacitor GPS available?  → use GPS (most accurate)
+    ↓ fail
+Cell towers in DB?        → use triangulation (~300m–2km)
+    ↓ fail
+Last known location       → use stale coords with age warning
+```
+
+**6. Schema addition**
+```sql
+alter table public.trackers add column location_source text default 'gps'; -- gps | cell | stale
+```
