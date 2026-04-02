@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
 import { severityColor, type Alert } from '@/lib/types'
@@ -33,7 +33,7 @@ export default function AlertsPage() {
   const { user, token } = useAuth()
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [filter, setFilter] = useState<Filter>('all')
-  const db = token ? createDb(token) : null
+  const db = useMemo(() => token ? createDb(token) : null, [token])
 
   async function load() {
     if (!db) return
@@ -41,7 +41,7 @@ export default function AlertsPage() {
     setAlerts(data ?? [])
   }
 
-  useEffect(() => { load() }, [token])
+  useEffect(() => { load() }, [db])
 
   async function markAllRead() {
     await db?.alerts.markAllRead()

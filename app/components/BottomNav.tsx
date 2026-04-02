@@ -2,21 +2,17 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { LayoutDashboard, MapPin, Users, Bell, Settings } from 'lucide-react'
+import { NAV_LINKS } from '@/lib/config'
 
-const links = [
-  { href: '/dashboard', icon: LayoutDashboard, label: 'Home' },
-  { href: '/tracking', icon: MapPin, label: 'Tracking' },
-  { href: '/search-party', icon: Users, label: 'Search' },
-  { href: '/alerts', icon: Bell, label: 'Alerts' },
-  { href: '/settings', icon: Settings, label: 'Settings' },
-]
+const ICONS = { LayoutDashboard, MapPin, Users, Bell, Settings }
 
 export default function BottomNav() {
   const path = usePathname()
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 flex border-t"
       style={{ background: 'var(--nav-bg)', borderColor: 'var(--border)' }}>
-      {links.map(({ href, icon: Icon, label }) => {
+      {NAV_LINKS.map(({ href, label, icon }) => {
+        const Icon = ICONS[icon as keyof typeof ICONS]
         const active = path.startsWith(href)
         return (
           <Link key={href} href={href}

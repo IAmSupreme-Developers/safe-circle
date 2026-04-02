@@ -1,9 +1,10 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
 import { severityColor, type Alert, type Tracker } from '@/lib/types'
 import { Card, SectionHeader } from '@/app/components/ui'
+import { DASHBOARD_ALERT_LIMIT } from '@/lib/config'
 import { Bell, MapPin, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
 
@@ -28,17 +29,17 @@ function StatCard({ icon: Icon, label, value, href }: { icon: React.ElementType;
 
 export default function DashboardPage() {
   const { user, token } = useAuth()
+  const db = useMemo(() => token ? createDb(token) : null, [token])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [trackers, setTrackers] = useState<Tracker[]>([])
   const [name, setName] = useState('')
 
   useEffect(() => {
-    if (!user || !token) return
-    const db = createDb(token)
+    if (!user || !db) return
     db.profile.get().then((data: any) => setName(data?.full_name ?? ''))
-    db.alerts.list(5).then((data: any) => setAlerts(data ?? []))
+    db.alerts.list(DASHBOARD_ALERT_LIMIT).then((data: any) => setAlerts(data ?? []))
     db.trackers.list().then((data: any) => setTrackers(data ?? []))
-  }, [user, token])
+  }, [db])
 
   const unread = alerts.filter(a => !a.is_read).length
 

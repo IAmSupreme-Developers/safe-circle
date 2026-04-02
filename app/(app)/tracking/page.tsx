@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
 import type { Tracker } from '@/lib/types'
@@ -73,8 +73,7 @@ export default function TrackingPage() {
   const { user, token } = useAuth()
   const [trackers, setTrackers] = useState<Tracker[]>([])
   const [showForm, setShowForm] = useState(false)
-
-  const db = token ? createDb(token) : null
+  const db = useMemo(() => token ? createDb(token) : null, [token])
 
   async function load() {
     if (!db) return
@@ -82,7 +81,7 @@ export default function TrackingPage() {
     setTrackers(data ?? [])
   }
 
-  useEffect(() => { load() }, [token])
+  useEffect(() => { load() }, [db])
 
   async function toggle(t: Tracker) {
     await db?.trackers.update(t.id, { is_active: !t.is_active })
