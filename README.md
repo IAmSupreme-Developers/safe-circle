@@ -1,120 +1,161 @@
-# SafeCircle — Tracker Device App
+<div align="center">
 
-This is the **tracker device branch** of SafeCircle. It runs on the device worn or carried by the person being monitored (child, elderly person, etc.) and continuously broadcasts GPS location to Supabase so guardians can track it in real time via the main SafeCircle app.
+# 📡 SafeCircle — Tracker Device
 
-> The main guardian app lives on the `main` branch.
+**The device-side app of SafeCircle.**
+Worn or carried by the person being monitored — continuously broadcasts GPS location to Supabase so guardians can track in real time.
 
----
+> 🛡️ The guardian app lives on the `main` branch.
 
-## How It Works
-
-1. Admin pre-inserts a tracker row in Supabase with a `device_id` and `code`
-2. This app is configured with those credentials via env vars
-3. On first launch, the app shows the device ID and code for the guardian to register
-4. Once the guardian registers the device in the main app, this app starts broadcasting GPS location every 5 seconds
+</div>
 
 ---
 
-## Setup
+## 🔄 How It Works
 
-### 1. Clone and install
+```
+Admin inserts tracker row (device_id + code) in Supabase
+        ↓
+Device app launches → reads credentials from env vars
+        ↓
+Shows device ID + code on screen
+        ↓
+Guardian registers device in the SafeCircle app
+        ↓
+Device taps "Check Registration Status" → owner_id confirmed
+        ↓
+🟢 Background GPS broadcasting starts
+```
+
+---
+
+## ⚡ Quick Start
+
+### 1 · Clone & Install
 
 ```bash
 git checkout track-device
 npm install
 ```
 
-### 2. Configure environment
-
-Copy `.env.local` and fill in your values:
-
-```bash
-cp .env.local .env.local
-```
+### 2 · Configure Environment
 
 ```env
+# .env.local
+
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
-# The device identity — must exist in the trackers table (inserted by admin)
+# Device identity — must exist in the trackers table (inserted by admin)
 NEXT_PUBLIC_DEVICE_ID=SC-ABC123
 NEXT_PUBLIC_DEVICE_CODE=XY99ZZ
 ```
 
-### 3. Insert the tracker row in Supabase
-
-Run this in the Supabase SQL editor (or via the admin panel):
+### 3 · Insert Tracker Row in Supabase
 
 ```sql
 insert into public.trackers (device_id, code)
 values ('SC-ABC123', 'XY99ZZ');
 ```
 
-The `owner_id` stays `null` until a guardian registers it.
+> `owner_id` stays `null` until a guardian registers it from the main app.
 
-### 4. Run
+### 4 · Run
 
 ```bash
 npm run dev
-```
-
-Open on the device at `http://localhost:3000`.
-
----
-
-## Device Credentials
-
-Credentials are resolved in this order:
-
-1. **Env vars** (`NEXT_PUBLIC_DEVICE_ID` + `NEXT_PUBLIC_DEVICE_CODE`) — used for pre-configured builds
-2. **localStorage** — used if the user manually entered credentials on first launch (fallback for dev/testing)
-
-For real hardware, credentials would be flashed onto the firmware at the factory.
-
----
-
-## Pairing Flow
-
-```
-Device launches
-    │
-    ├─ Credentials found (env or localStorage)?
-    │       │
-    │       └─ Yes → Show device ID + code on screen
-    │                    │
-    │                    └─ Guardian registers device in main app
-    │                             │
-    │                             └─ Tap "I've been registered" → check owner_id set
-    │                                          │
-    │                                          └─ ✓ Start broadcasting
-    │
-    └─ No → Manual entry screen (enter ID + code printed on device)
+# Open at http://localhost:3000
 ```
 
 ---
 
-## Broadcasting
+## 📂 Project Structure
 
-- Uses the browser `navigator.geolocation` API (GPS on mobile, IP-based on desktop)
-- Pings every **5 seconds** — updates `last_lat`, `last_lng`, `last_seen` on the tracker row
-- Auto-starts on launch after pairing
-- Can be manually stopped/started from the UI
-- Tap **Unpair Device** to reset and re-pair with a different account
+```
+app/
+  page.tsx                  → Orchestrator (pair vs broadcast)
+  layout.tsx                → Root layout
+  globals.css               → Theme variables
+  components/
+    PairScreen.tsx          → Setup + waiting for registration
+    BroadcastScreen.tsx     → Live GPS broadcasting UI
+    ui.tsx                  → Shared UI primitives (Screen, Btn, DeviceIcon)
+lib/
+  config.ts                 → ⚙️  All tuneable constants (edit here to control behaviour)
+  device.ts                 → All device logic (credentials, pairing, location)
+  supabase.ts               → Supabase client
+```
 
 ---
 
-## Security Notes
+## ⚙️ Configuration
 
-- The device only has the Supabase **anon key** — it can only update its own tracker row
-- Device registration (claiming ownership) is done exclusively through the main app's authenticated API
-- A device can only be claimed once — once `owner_id` is set, no other guardian can register it
-- To transfer ownership, the current owner must release the device from the main app (post-hackathon feature)
+All process variables are centralised in **`lib/config.ts`** — edit there to change behaviour without touching logic files.
+
+| Constant | Default | Description |
+|---|---|---|
+| `DISTANCE_FILTER_METERS` | `10` | Min movement (m) to trigger a location ping |
+| `GPS_TIMEOUT_MS` | `10000` | GPS acquisition timeout |
+| `FOREGROUND_PING_INTERVAL_MS` | `5000` | Fallback ping interval on web (ms) |
+| `BG_NOTIFICATION_TITLE` | `SafeCircle Active` | Android notification title |
+| `BG_NOTIFICATION_MESSAGE` | `SafeCircle is tracking...` | Android notification body |
+| `STORAGE_KEY_PAIRED_DEVICE` | `sc_device` | localStorage key for paired device state |
 
 ---
 
-## Post-Hackathon (Hardware)
+## 🔐 Credential Resolution
 
-When real tracker hardware is available:
-- Device ID and code are flashed at the factory
-- Location is sent over LTE/NB-IoT directly to Supabase (no phone needed)
-- Form factors: earring, backpack clip, wristband, shoe insert
+Credentials are resolved in this priority order:
+
+```
+1. Env vars  →  NEXT_PUBLIC_DEVICE_ID + NEXT_PUBLIC_DEVICE_CODE  (pre-configured builds)
+2. localStorage  →  manually entered on first launch  (dev / testing fallback)
+```
+
+> For real hardware, credentials are flashed onto firmware at the factory.
+
+---
+
+## 📡 Broadcasting
+
+| Mode | How | When |
+|---|---|---|
+| **Native background** | `@capacitor-community/background-geolocation` | On Android/iOS — survives screen lock |
+| **Foreground fallback** | Interval ping every `FOREGROUND_PING_INTERVAL_MS` | On web/dev — stops when screen locks |
+
+Location updates write `last_lat`, `last_lng`, `last_seen`, `accuracy` directly to the tracker's Supabase row via HTTP (anon key).
+
+---
+
+## 🔒 Security
+
+- Device only holds the Supabase **anon key** — RLS restricts it to updating its own row only
+- Ownership is claimed exclusively through the guardian app's authenticated API
+- A device can only be claimed **once** — `owner_id` is permanent until released by the owner
+- No auth required on the device itself — the device ID + code is the identity
+
+---
+
+## 🤖 Native Setup (Capacitor)
+
+Required to enable background location on a real device:
+
+```bash
+npx cap init "SafeCircle Tracker" "com.safecircle.tracker"
+npx cap add android
+npm run build && npx cap sync android
+npx cap open android
+```
+
+See **`TO-NOTE.md`** for required Android permissions and gotchas.
+
+---
+
+## 🔭 Post-Hackathon (Hardware)
+
+| Feature | Details |
+|---|---|
+| Custom form factors | Earring, backpack clip, wristband, shoe insert |
+| Connectivity | LTE / NB-IoT — no phone needed |
+| Provisioning | Device ID + code flashed at factory |
+| Offline fallback | Cell tower triangulation → see `TODO.md` |

@@ -1,38 +1,52 @@
 import { Geolocation } from '@capacitor/geolocation'
+import { registerPlugin } from '@capacitor/core'
+import { BackgroundGeolocationPlugin } from '@capacitor-community/background-geolocation'
 import { supabase } from './supabase'
+import {
+  DISTANCE_FILTER_METERS,
+  GPS_TIMEOUT_MS,
+  BG_NOTIFICATION_TITLE,
+  BG_NOTIFICATION_MESSAGE,
+  STORAGE_KEY_CREDENTIALS,
+  STORAGE_KEY_PAIRED_DEVICE,
+} from './config'
+
+const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation')
 
 export type DeviceInfo = { trackerId: string; label: string }
 export type BroadcastStatus = 'idle' | 'broadcasting' | 'error' | 'no_gps'
 
-export const PING_INTERVAL_MS = 5000
+// --- Credentials ---
 
-/** Resolve credentials: env vars first, then localStorage */
 export function getCredentials(): { device_id: string; code: string } | null {
   const envId = process.env.NEXT_PUBLIC_DEVICE_ID
   const envCode = process.env.NEXT_PUBLIC_DEVICE_CODE
   if (envId && envCode) return { device_id: envId, code: envCode }
-  const stored = localStorage.getItem('sc_device_credentials')
+  const stored = localStorage.getItem(STORAGE_KEY_CREDENTIALS)
   return stored ? JSON.parse(stored) : null
 }
 
 export function saveCredentials(device_id: string, code: string) {
-  localStorage.setItem('sc_device_credentials', JSON.stringify({ device_id, code }))
+  localStorage.setItem(STORAGE_KEY_CREDENTIALS, JSON.stringify({ device_id, code }))
 }
 
+// --- Paired device ---
+
 export function getPairedDevice(): DeviceInfo | null {
-  const stored = localStorage.getItem('sc_device')
+  const stored = localStorage.getItem(STORAGE_KEY_PAIRED_DEVICE)
   return stored ? JSON.parse(stored) : null
 }
 
 export function savePairedDevice(info: DeviceInfo) {
-  localStorage.setItem('sc_device', JSON.stringify(info))
+  localStorage.setItem(STORAGE_KEY_PAIRED_DEVICE, JSON.stringify(info))
 }
 
 export function clearPairedDevice() {
-  localStorage.removeItem('sc_device')
+  localStorage.removeItem(STORAGE_KEY_PAIRED_DEVICE)
 }
 
-/** Check if this device has been claimed by a guardian */
+// --- Registration ---
+
 export async function checkRegistration(device_id: string): Promise<DeviceInfo | null> {
   const { data } = await supabase
     .from('trackers')
@@ -43,17 +57,49 @@ export async function checkRegistration(device_id: string): Promise<DeviceInfo |
   return { trackerId: data.id, label: data.label ?? device_id }
 }
 
-/** Push current GPS coords to Supabase */
+// --- Location ---
+
+async function writeLocation(trackerId: string, lat: number, lng: number, accuracy: number): Promise<boolean> {
+  const { error } = await supabase
+    .from('trackers')
+    .update({ last_lat: lat, last_lng: lng, last_seen: new Date().toISOString(), accuracy })
+    .eq('id', trackerId)
+  return !error
+}
+
+/** One-shot foreground ping — fallback for web */
 export async function pingLocation(trackerId: string): Promise<boolean> {
   try {
-    const position = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000 })
-    const { latitude, longitude, accuracy } = position.coords
-    const { error } = await supabase
-      .from('trackers')
-      .update({ last_lat: latitude, last_lng: longitude, last_seen: new Date().toISOString(), accuracy })
-      .eq('id', trackerId)
-    return !error
-  } catch {
-    return false
-  }
+    const { coords } = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: GPS_TIMEOUT_MS })
+    return writeLocation(trackerId, coords.latitude, coords.longitude, coords.accuracy)
+  } catch { return false }
+}
+
+let bgWatcherId: string | null = null
+
+/** Start native background watcher — survives app backgrounding and screen lock */
+export async function startBackgroundTracking(trackerId: string): Promise<boolean> {
+  try {
+    bgWatcherId = await BackgroundGeolocation.addWatcher(
+      {
+        backgroundTitle: BG_NOTIFICATION_TITLE,
+        backgroundMessage: BG_NOTIFICATION_MESSAGE,
+        requestPermissions: true,
+        stale: false,
+        distanceFilter: DISTANCE_FILTER_METERS,
+      },
+      async (location, error) => {
+        if (error || !location) return
+        await writeLocation(trackerId, location.latitude, location.longitude, location.accuracy)
+      }
+    )
+    return true
+  } catch { return false }
+}
+
+/** Stop background watcher */
+export async function stopBackgroundTracking(): Promise<void> {
+  if (!bgWatcherId) return
+  try { await BackgroundGeolocation.removeWatcher({ id: bgWatcherId }) } catch {}
+  bgWatcherId = null
 }

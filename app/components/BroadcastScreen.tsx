@@ -1,12 +1,13 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { Radio, RadioTower, Unlink } from 'lucide-react'
-import { pingLocation, PING_INTERVAL_MS } from '@/lib/device'
+import { startBackgroundTracking, stopBackgroundTracking, pingLocation } from '@/lib/device'
 import type { DeviceInfo, BroadcastStatus } from '@/lib/device'
+import { FOREGROUND_PING_INTERVAL_MS } from '@/lib/config'
 import { Btn } from './ui'
 
 const STATUS_CONFIG: Record<BroadcastStatus, { label: string; color: string }> = {
-  idle:         { label: 'Starting…',       color: 'var(--fg-muted)' },
+  idle:         { label: 'Stopped',         color: 'var(--fg-muted)' },
   broadcasting: { label: 'Broadcasting',    color: 'var(--accent)'   },
   error:        { label: 'Upload failed',   color: 'var(--danger)'   },
   no_gps:       { label: 'GPS unavailable', color: 'var(--warning)'  },
@@ -17,16 +18,32 @@ export default function BroadcastScreen({ device, onUnpair }: { device: DeviceIn
   const [lastPing, setLastPing] = useState<string | null>(null)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  async function ping() {
-    const ok = await pingLocation(device.trackerId)
-    setStatus(ok ? 'broadcasting' : 'no_gps')
-    if (ok) setLastPing(new Date().toLocaleTimeString())
+  async function start() {
+    setStatus('idle')
+    const ok = await startBackgroundTracking(device.trackerId)
+    if (ok) {
+      setStatus('broadcasting')
+      setLastPing(new Date().toLocaleTimeString())
+    } else {
+      // Fallback: interval-based foreground ping (web/dev)
+      const ping = async () => {
+        const pinged = await pingLocation(device.trackerId)
+        setStatus(pinged ? 'broadcasting' : 'no_gps')
+        if (pinged) setLastPing(new Date().toLocaleTimeString())
+      }
+      await ping()
+      intervalRef.current = setInterval(ping, FOREGROUND_PING_INTERVAL_MS)
+    }
   }
 
-  function start() { ping(); intervalRef.current = setInterval(ping, PING_INTERVAL_MS) }
-  function stop() { if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null } }
+  async function stop() {
+    await stopBackgroundTracking()
+    if (intervalRef.current) { clearInterval(intervalRef.current); intervalRef.current = null }
+    setStatus('idle')
+  }
 
-  useEffect(() => { start(); return stop }, [])
+  // Auto-start on mount
+  useEffect(() => { start(); return () => { stopBackgroundTracking() } }, [])
 
   const isActive = status === 'broadcasting'
   const { label, color } = STATUS_CONFIG[status]
@@ -37,7 +54,9 @@ export default function BroadcastScreen({ device, onUnpair }: { device: DeviceIn
         {isActive && <span className="absolute h-32 w-32 rounded-full animate-ping opacity-20" style={{ background: 'var(--accent)' }} />}
         <div className="flex h-24 w-24 items-center justify-center rounded-full"
           style={{ background: 'color-mix(in srgb, var(--accent) 20%, transparent)' }}>
-          {isActive ? <RadioTower size={44} style={{ color: 'var(--accent)' }} /> : <Radio size={44} style={{ color: 'var(--fg-muted)' }} />}
+          {isActive
+            ? <RadioTower size={44} style={{ color: 'var(--accent)' }} />
+            : <Radio size={44} style={{ color: 'var(--fg-muted)' }} />}
         </div>
       </div>
 
@@ -49,7 +68,7 @@ export default function BroadcastScreen({ device, onUnpair }: { device: DeviceIn
 
       <div className="w-full max-w-xs space-y-3">
         {isActive
-          ? <Btn variant="danger" onClick={() => { stop(); setStatus('idle') }}>Stop Broadcasting</Btn>
+          ? <Btn variant="danger" onClick={stop}>Stop Broadcasting</Btn>
           : <Btn onClick={start}>Start Broadcasting</Btn>}
         <Btn variant="ghost" onClick={() => { stop(); onUnpair() }}><Unlink size={15} /> Unpair Device</Btn>
       </div>
