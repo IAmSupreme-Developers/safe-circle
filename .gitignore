@@ -3,3 +3,6 @@ AGENTS.md
 CLAUDE.md
 safecircle.txt
 safecircle.md
+/.next
+.env.local
+.env
