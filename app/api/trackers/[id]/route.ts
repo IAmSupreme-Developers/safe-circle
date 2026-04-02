@@ -1,22 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/auth'
+import { withAuth, ok, serverError } from '@/lib/api'
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
+export const PATCH = withAuth(async (req: NextRequest, user, { id }) => {
   const body = await req.json()
   const { error } = await supabaseAdmin.from('trackers').update(body).eq('id', id).eq('owner_id', user.id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
-}
+  if (error) return serverError(error.message)
+  return ok({ success: true })
+})
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  const { id } = await params
+export const DELETE = withAuth(async (_req, user, { id }) => {
   const { error } = await supabaseAdmin.from('trackers').delete().eq('id', id).eq('owner_id', user.id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
-}
+  if (error) return serverError(error.message)
+  return ok({ success: true })
+})

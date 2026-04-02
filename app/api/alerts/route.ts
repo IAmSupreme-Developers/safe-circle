@@ -1,23 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/auth'
+import { withAuth, ok, serverError } from '@/lib/api'
 
-export async function GET(req: NextRequest) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const GET = withAuth(async (req: NextRequest, user) => {
   const limit = req.nextUrl.searchParams.get('limit')
   let q = supabaseAdmin.from('alerts').select('*').eq('owner_id', user.id).order('created_at', { ascending: false })
   if (limit) q = q.limit(Number(limit))
   const { data, error } = await q
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
-}
+  if (error) return serverError(error.message)
+  return ok(data)
+})
 
-export async function PATCH(req: NextRequest) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  // mark all read
+export const PATCH = withAuth(async (_req, user) => {
   const { error } = await supabaseAdmin.from('alerts').update({ is_read: true }).eq('owner_id', user.id).eq('is_read', false)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ success: true })
-}
+  if (error) return serverError(error.message)
+  return ok({ success: true })
+})

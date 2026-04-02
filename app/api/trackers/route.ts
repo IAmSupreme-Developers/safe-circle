@@ -1,29 +1,30 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { getAuthUser } from '@/lib/auth'
+import { withAuth, ok, err, notFound, conflict, badRequest, serverError } from '@/lib/api'
+import type { User } from '@supabase/supabase-js'
 
-export async function GET(req: NextRequest) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export const GET = withAuth(async (_req, user) => {
   const { data, error } = await supabaseAdmin.from('trackers').select('*').eq('owner_id', user.id)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
-}
+  if (error) return serverError(error.message)
+  return ok(data)
+})
 
-export async function POST(req: NextRequest) {
-  const user = await getAuthUser(req)
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const POST = withAuth(async (req: NextRequest, user: User) => {
   const { label, device_id, code } = await req.json()
-  if (!label || !device_id || !code) return NextResponse.json({ error: 'Missing fields' }, { status: 400 })
+  if (!label || !device_id || !code) return badRequest()
 
-  // Check device not already registered
-  const { data: existing } = await supabaseAdmin.from('trackers').select('id').eq('device_id', device_id).single()
-  if (existing) return NextResponse.json({ error: 'Device already registered' }, { status: 409 })
+  const { data: tracker } = await supabaseAdmin
+    .from('trackers').select('id, code, owner_id').eq('device_id', device_id).single()
 
-  // TODO: validate code against device registry (post-hackathon)
+  if (!tracker) return notFound('Device not found.')
+  if (tracker.code !== code) return err('Invalid pairing code.', 401)
+  if (tracker.owner_id && tracker.owner_id !== user.id) return conflict('Device already registered to another account.')
 
-  const { data, error } = await supabaseAdmin.from('trackers').insert({ owner_id: user.id, label, device_id }).select().single()
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
-}
+  const { data, error } = await supabaseAdmin
+    .from('trackers')
+    .update({ owner_id: user.id, label, registered_at: new Date().toISOString() })
+    .eq('device_id', device_id).select().single()
+
+  if (error) return serverError(error.message)
+  return ok(data, 201)
+})
