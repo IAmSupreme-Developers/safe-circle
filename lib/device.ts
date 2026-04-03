@@ -9,6 +9,7 @@ import {
   BG_NOTIFICATION_MESSAGE,
   STORAGE_KEY_CREDENTIALS,
   STORAGE_KEY_PAIRED_DEVICE,
+  SERVER_URL,
 } from './config'
 
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation')
@@ -48,13 +49,12 @@ export function clearPairedDevice() {
 // --- Registration ---
 
 export async function checkRegistration(device_id: string): Promise<DeviceInfo | null> {
-  const { data } = await supabase
-    .from('trackers')
-    .select('id, label, owner_id')
-    .eq('device_id', device_id)
-    .single()
-  if (!data?.owner_id) return null
-  return { trackerId: data.id, label: data.label ?? device_id }
+  try {
+    const res = await fetch(`${SERVER_URL}/api/device/check?device_id=${encodeURIComponent(device_id)}`)
+    const data = await res.json()
+    if (!data.registered) return null
+    return { trackerId: data.trackerId, label: data.label ?? device_id }
+  } catch { return null }
 }
 
 // --- Location ---

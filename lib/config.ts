@@ -22,5 +22,5 @@ export const STORAGE_KEY_CREDENTIALS = 'sc_device_credentials'
 export const STORAGE_KEY_PAIRED_DEVICE = 'sc_device'
 
 // --- Registration check ---
-/** How long to wait (ms) before timing out a registration status check */
-export const REGISTRATION_CHECK_TIMEOUT_MS = 8000
+/** Base URL of the server — empty string falls back to relative URLs (local dev) */
+export const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
