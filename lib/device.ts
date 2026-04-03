@@ -1,7 +1,7 @@
 import { Geolocation } from '@capacitor/geolocation'
 import { registerPlugin } from '@capacitor/core'
 import { BackgroundGeolocationPlugin } from '@capacitor-community/background-geolocation'
-import { supabase } from './supabase'
+import { signPayload } from './hmac'
 import {
   DISTANCE_FILTER_METERS,
   GPS_TIMEOUT_MS,
@@ -10,6 +10,7 @@ import {
   STORAGE_KEY_CREDENTIALS,
   STORAGE_KEY_PAIRED_DEVICE,
   SERVER_URL,
+  DEVICE_HMAC_SECRET,
 } from './config'
 
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation')
@@ -60,11 +61,18 @@ export async function checkRegistration(device_id: string): Promise<DeviceInfo |
 // --- Location ---
 
 async function writeLocation(trackerId: string, lat: number, lng: number, accuracy: number): Promise<boolean> {
-  const { error } = await supabase
-    .from('trackers')
-    .update({ last_lat: lat, last_lng: lng, last_seen: new Date().toISOString(), accuracy })
-    .eq('id', trackerId)
-  return !error
+  try {
+    const timestamp = new Date().toISOString()
+    const payload = JSON.stringify({ trackerId, lat, lng, accuracy, timestamp })
+    const signature = await signPayload(payload, DEVICE_HMAC_SECRET)
+
+    const res = await fetch(`${SERVER_URL}/api/device/location`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trackerId, lat, lng, accuracy, timestamp, signature }),
+    })
+    return res.ok
+  } catch { return false }
 }
 
 /** One-shot foreground ping — fallback for web */

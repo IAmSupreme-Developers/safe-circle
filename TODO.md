@@ -86,6 +86,12 @@
 - [ ] Custom hardware tracker (earring, backpack clip, wristband form factors)
 - [ ] Tracker firmware — sends GPS pings over LTE/NB-IoT directly to Supabase
 - [ ] Device binding server — one-time code validation registry
+- [ ] **Per-device HMAC secrets** — replace global `DEVICE_HMAC_SECRET` with per-device secret stored in `trackers.hmac_secret`
+  - Factory generates unique secret per device, flashes onto firmware
+  - Server fetches `trackers.hmac_secret` by `trackerId` on each request and verifies with that secret
+  - Schema: `alter table public.trackers add column hmac_secret text;`
+  - Code change: swap `process.env.DEVICE_HMAC_SECRET` → `tracker.hmac_secret` in `/api/device/location/route.ts`
+  - Compromising one device's secret doesn't affect others
 
 ---
 

@@ -3,9 +3,10 @@
 # 📡 SafeCircle — Tracker Device
 
 **The device-side app of SafeCircle.**
-Worn or carried by the person being monitored — continuously broadcasts GPS location to Supabase so guardians can track in real time.
+Worn or carried by the person being monitored — continuously broadcasts GPS location so guardians can track in real time via the SafeCircle app.
 
 > 🛡️ The guardian app lives on the `main` branch.
+> 🖥️ The server (API routes) lives on the `server` branch.
 
 </div>
 
@@ -16,15 +17,17 @@ Worn or carried by the person being monitored — continuously broadcasts GPS lo
 ```
 Admin inserts tracker row (device_id + code) in Supabase
         ↓
-Device app launches → reads credentials from env vars
+Device app launches → reads credentials from env vars (or manual entry)
         ↓
 Shows device ID + code on screen
         ↓
 Guardian registers device in the SafeCircle app
         ↓
-Device taps "Check Registration Status" → owner_id confirmed
+Device taps "Check Registration Status" → server confirms owner_id set
         ↓
 🟢 Background GPS broadcasting starts
+        ↓
+Every location ping is HMAC-signed → sent to server → written to Supabase
 ```
 
 ---
@@ -45,10 +48,18 @@ npm install
 
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Device identity — must exist in the trackers table (inserted by admin)
 NEXT_PUBLIC_DEVICE_ID=SC-ABC123
 NEXT_PUBLIC_DEVICE_CODE=XY99ZZ
+
+# Server URL — leave empty for local dev, set to deployed URL in production
+NEXT_PUBLIC_SERVER_URL=
+
+# HMAC secret — must match DEVICE_HMAC_SECRET on the server
+NEXT_PUBLIC_DEVICE_HMAC_SECRET=your-long-random-secret
+DEVICE_HMAC_SECRET=your-long-random-secret
 ```
 
 ### 3 · Insert Tracker Row in Supabase
@@ -73,39 +84,46 @@ npm run dev
 
 ```
 app/
-  page.tsx                  → Orchestrator (pair vs broadcast)
-  layout.tsx                → Root layout
-  globals.css               → Theme variables
+  page.tsx                    → Orchestrator (pair vs broadcast)
+  layout.tsx                  → Root layout
+  globals.css                 → Theme variables
   components/
-    PairScreen.tsx          → Setup + waiting for registration
-    BroadcastScreen.tsx     → Live GPS broadcasting UI
-    ui.tsx                  → Shared UI primitives (Screen, Btn, DeviceIcon)
+    PairScreen.tsx            → Setup + waiting for registration
+    BroadcastScreen.tsx       → Live GPS broadcasting UI
+    ui.tsx                    → Shared UI primitives (Screen, Btn, DeviceIcon)
+  api/
+    device/
+      check/route.ts          → Registration status check (public, no auth)
+      location/route.ts       → Receives signed location pings, writes to DB
 lib/
-  config.ts                 → ⚙️  All tuneable constants (edit here to control behaviour)
-  device.ts                 → All device logic (credentials, pairing, location)
-  supabase.ts               → Supabase client
+  config.ts                   → ⚙️  All tuneable constants
+  device.ts                   → All device logic (credentials, pairing, location)
+  hmac.ts                     → HMAC-SHA256 sign + verify utilities
+  api.ts                      → API response helpers
+  supabase.ts                 → Supabase anon client
+  supabase-admin.ts           → Supabase service role client (server-side only)
 ```
 
 ---
 
 ## ⚙️ Configuration
 
-All process variables are centralised in **`lib/config.ts`** — edit there to change behaviour without touching logic files.
+All tuneable constants live in **`lib/config.ts`**.
 
 | Constant | Default | Description |
 |---|---|---|
-| `DISTANCE_FILTER_METERS` | `10` | Min movement (m) to trigger a location ping |
-| `GPS_TIMEOUT_MS` | `10000` | GPS acquisition timeout |
+| `DISTANCE_FILTER_METERS` | `10` | Min movement (m) before a location ping fires |
+| `GPS_TIMEOUT_MS` | `10000` | GPS acquisition timeout (ms) |
 | `FOREGROUND_PING_INTERVAL_MS` | `5000` | Fallback ping interval on web (ms) |
 | `BG_NOTIFICATION_TITLE` | `SafeCircle Active` | Android notification title |
 | `BG_NOTIFICATION_MESSAGE` | `SafeCircle is tracking...` | Android notification body |
 | `STORAGE_KEY_PAIRED_DEVICE` | `sc_device` | localStorage key for paired device state |
+| `SERVER_URL` | `http://localhost:3000` | Base URL for API calls |
+| `DEVICE_HMAC_SECRET` | *(env var)* | Shared secret for request signing |
 
 ---
 
 ## 🔐 Credential Resolution
-
-Credentials are resolved in this priority order:
 
 ```
 1. Env vars  →  NEXT_PUBLIC_DEVICE_ID + NEXT_PUBLIC_DEVICE_CODE  (pre-configured builds)
@@ -120,19 +138,22 @@ Credentials are resolved in this priority order:
 
 | Mode | How | When |
 |---|---|---|
-| **Native background** | `@capacitor-community/background-geolocation` | On Android/iOS — survives screen lock |
-| **Foreground fallback** | Interval ping every `FOREGROUND_PING_INTERVAL_MS` | On web/dev — stops when screen locks |
+| **Native background** | `@capacitor-community/background-geolocation` | Android/iOS — survives screen lock |
+| **Foreground fallback** | Interval ping every `FOREGROUND_PING_INTERVAL_MS` | Web/dev — stops when screen locks |
 
-Location updates write `last_lat`, `last_lng`, `last_seen`, `accuracy` directly to the tracker's Supabase row via HTTP (anon key).
+Location pings are **HMAC-SHA256 signed** and sent to `/api/device/location`. The server verifies the signature and timestamp before writing to Supabase. Direct Supabase access from the device is not used.
 
 ---
 
 ## 🔒 Security
 
-- Device only holds the Supabase **anon key** — RLS restricts it to updating its own row only
-- Ownership is claimed exclusively through the guardian app's authenticated API
-- A device can only be claimed **once** — `owner_id` is permanent until released by the owner
-- No auth required on the device itself — the device ID + code is the identity
+| Concern | How it's handled |
+|---|---|
+| Location spoofing | HMAC-SHA256 signature on every ping — tampered payloads rejected |
+| Replay attacks | 30-second timestamp expiry window |
+| Code exposure | `code` column never returned to device — registration check via server API only |
+| Unauthorised claiming | Device can only be claimed once — `owner_id` locked to first guardian |
+| Data in transit | HTTPS (TLS) encrypts all traffic |
 
 ---
 
@@ -157,5 +178,6 @@ See **`TO-NOTE.md`** for required Android permissions and gotchas.
 |---|---|
 | Custom form factors | Earring, backpack clip, wristband, shoe insert |
 | Connectivity | LTE / NB-IoT — no phone needed |
-| Provisioning | Device ID + code flashed at factory |
+| Provisioning | Device ID + code + HMAC secret flashed at factory |
+| Per-device secrets | Unique HMAC secret per device → see `TODO.md` |
 | Offline fallback | Cell tower triangulation → see `TODO.md` |

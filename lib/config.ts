@@ -24,3 +24,6 @@ export const STORAGE_KEY_PAIRED_DEVICE = 'sc_device'
 // --- Registration check ---
 /** Base URL of the server — empty string falls back to relative URLs (local dev) */
 export const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+
+/** HMAC secret for signing device→server requests (must match server-side DEVICE_HMAC_SECRET) */
+export const DEVICE_HMAC_SECRET = process.env.NEXT_PUBLIC_DEVICE_HMAC_SECRET ?? ''
