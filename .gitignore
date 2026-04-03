@@ -8,3 +8,4 @@ safecircle.md
 .env.local
 .env
 /out
+/shared
