@@ -4,6 +4,7 @@ import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
 import { severityColor, type Alert } from '@/lib/types'
 import { CheckCheck } from 'lucide-react'
+import { Skeleton } from '@/app/components/ui'
 
 const FILTERS = ['all', 'unread', 'danger', 'warning', 'info'] as const
 type Filter = typeof FILTERS[number]
@@ -30,15 +31,17 @@ function AlertItem({ alert, onRead }: { alert: Alert; onRead: () => void }) {
 }
 
 export default function AlertsPage() {
-  const { user, token } = useAuth()
+  const { token } = useAuth()
+  const db = useMemo(() => token ? createDb(token) : null, [token])
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [filter, setFilter] = useState<Filter>('all')
-  const db = useMemo(() => token ? createDb(token) : null, [token])
+  const [loading, setLoading] = useState(true)
 
   async function load() {
     if (!db) return
     const data: any = await db.alerts.list().catch(() => [])
     setAlerts(data ?? [])
+    setLoading(false)
   }
 
   useEffect(() => { load() }, [db])
@@ -80,9 +83,11 @@ export default function AlertsPage() {
         ))}
       </div>
 
-      {visible.length === 0
-        ? <p className="py-8 text-center text-sm" style={{ color: 'var(--fg-muted)' }}>No alerts.</p>
-        : visible.map(a => <AlertItem key={a.id} alert={a} onRead={() => markRead(a.id)} />)}
+      {loading
+        ? <div className="space-y-2">{[1,2,3,4].map(i => <Skeleton key={i} style={{ height: 64 }} />)}</div>
+        : visible.length === 0
+          ? <p className="py-8 text-center text-sm" style={{ color: 'var(--fg-muted)' }}>No alerts.</p>
+          : visible.map(a => <AlertItem key={a.id} alert={a} onRead={() => markRead(a.id)} />)}
     </div>
   )
 }

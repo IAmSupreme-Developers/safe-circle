@@ -9,3 +9,5 @@ safecircle.md
 .env
 /out
 /shared
+
+/.kiro/*

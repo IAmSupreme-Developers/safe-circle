@@ -1,12 +1,16 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
-import { severityColor, type Alert, type Tracker } from '@/lib/types'
-import { Card, SectionHeader } from '@/app/components/ui'
+import { useTrackerRealtime } from '@/lib/realtime'
+import { severityColor, type Alert, type Tracker, type MapPoint } from '@/lib/types'
+import { Card, SectionHeader, Skeleton } from '@/app/components/ui'
 import { DASHBOARD_ALERT_LIMIT } from '@/lib/config'
 import { Bell, MapPin, Shield, Users } from 'lucide-react'
 import Link from 'next/link'
+
+const MapView = dynamic(() => import('@/app/components/MapView'), { ssr: false })
 
 function UnreadBadge({ count }: { count: number }) {
   if (!count) return null
@@ -33,13 +37,25 @@ export default function DashboardPage() {
   const [alerts, setAlerts] = useState<Alert[]>([])
   const [trackers, setTrackers] = useState<Tracker[]>([])
   const [name, setName] = useState('')
+  const [loadingTrackers, setLoadingTrackers] = useState(true)
+  const [loadingAlerts, setLoadingAlerts] = useState(true)
 
   useEffect(() => {
     if (!user || !db) return
     db.profile.get().then((data: any) => setName(data?.full_name ?? ''))
-    db.alerts.list(DASHBOARD_ALERT_LIMIT).then((data: any) => setAlerts(data ?? []))
-    db.trackers.list().then((data: any) => setTrackers(data ?? []))
+    db.trackers.list().then((data: any) => { setTrackers(data ?? []); setLoadingTrackers(false) })
+    db.alerts.list(DASHBOARD_ALERT_LIMIT).then((data: any) => { setAlerts(data ?? []); setLoadingAlerts(false) })
   }, [db])
+
+  // Live tracker updates
+  useTrackerRealtime(user?.id, (updated) => {
+    setTrackers(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t))
+  })
+
+  const mapPoints = useMemo<MapPoint[]>(() =>
+    trackers.filter(t => t.last_lat && t.last_lng)
+      .map(t => ({ id: t.id, lat: t.last_lat!, lng: t.last_lng!, label: t.label, type: 'tracker' as const }))
+  , [trackers])
 
   const unread = alerts.filter(a => !a.is_read).length
 
@@ -60,39 +76,54 @@ export default function DashboardPage() {
       </div>
 
       <section>
+        <SectionHeader title="Live Map" action={<Link href="/map" className="text-sm" style={{ color: 'var(--accent)' }}>Full screen</Link>} />
+        {loadingTrackers
+          ? <Skeleton style={{ height: 200 }} />
+          : mapPoints.length === 0
+            ? <Card><p className="text-sm text-center py-2" style={{ color: 'var(--fg-muted)' }}>No tracker locations yet.</p></Card>
+            : <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
+                <MapView points={mapPoints} height={200} />
+              </div>}
+      </section>
+
+      <section>
         <SectionHeader title="Trackers" action={<Link href="/tracking" className="text-sm" style={{ color: 'var(--accent)' }}>Manage</Link>} />
-        {trackers.length === 0
-          ? <Card><p className="text-sm text-center py-2" style={{ color: 'var(--fg-muted)' }}>No trackers yet. <Link href="/tracking" style={{ color: 'var(--accent)' }}>Add one →</Link></p></Card>
-          : trackers.map(t => (
-            <Card key={t.id} style={{ marginBottom: 8 }}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Shield size={18} style={{ color: t.is_active ? 'var(--accent)' : 'var(--fg-muted)' }} />
-                  <span className="font-medium">{t.label}</span>
+        {loadingTrackers
+          ? <div className="space-y-2">{[1,2].map(i => <Skeleton key={i} style={{ height: 56 }} />)}</div>
+          : trackers.length === 0
+            ? <Card><p className="text-sm text-center py-2" style={{ color: 'var(--fg-muted)' }}>No trackers yet. <Link href="/tracking" style={{ color: 'var(--accent)' }}>Add one →</Link></p></Card>
+            : trackers.map(t => (
+              <Card key={t.id} style={{ marginBottom: 8 }}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Shield size={18} style={{ color: t.is_active ? 'var(--accent)' : 'var(--fg-muted)' }} />
+                    <span className="font-medium">{t.label}</span>
+                  </div>
+                  <span className="text-xs" style={{ color: 'var(--fg-muted)' }}>
+                    {t.last_seen ? new Date(t.last_seen).toLocaleTimeString() : 'Never'}
+                  </span>
                 </div>
-                <span className="text-xs" style={{ color: 'var(--fg-muted)' }}>
-                  {t.last_seen ? new Date(t.last_seen).toLocaleTimeString() : 'Never'}
-                </span>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
       </section>
 
       <section>
         <SectionHeader title="Recent Alerts" action={<Link href="/alerts" className="text-sm" style={{ color: 'var(--accent)' }}>See all</Link>} />
-        {alerts.length === 0
-          ? <p className="text-sm" style={{ color: 'var(--fg-muted)' }}>No alerts yet.</p>
-          : alerts.map(a => (
-            <Card key={a.id} style={{ marginBottom: 8, opacity: a.is_read ? 0.6 : 1 }}>
-              <div className="flex items-start gap-2">
-                <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: severityColor[a.severity] }} />
-                <div>
-                  <p className="text-sm">{a.message}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--fg-muted)' }}>{new Date(a.created_at).toLocaleString()}</p>
+        {loadingAlerts
+          ? <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} style={{ height: 56 }} />)}</div>
+          : alerts.length === 0
+            ? <p className="text-sm" style={{ color: 'var(--fg-muted)' }}>No alerts yet.</p>
+            : alerts.map(a => (
+              <Card key={a.id} style={{ marginBottom: 8, opacity: a.is_read ? 0.6 : 1 }}>
+                <div className="flex items-start gap-2">
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: severityColor[a.severity] }} />
+                  <div>
+                    <p className="text-sm">{a.message}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--fg-muted)' }}>{new Date(a.created_at).toLocaleString()}</p>
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
       </section>
     </div>
   )

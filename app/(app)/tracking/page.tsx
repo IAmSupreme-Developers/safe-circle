@@ -4,7 +4,9 @@ import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
 import type { Tracker } from '@/lib/types'
 import { Card, Input, Button } from '@/app/components/ui'
-import { Plus, Trash2, MapPin, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Plus, Trash2, MapPin, ToggleLeft, ToggleRight, Map } from 'lucide-react'
+import Link from 'next/link'
+import { Skeleton } from '@/app/components/ui'
 
 const EMPTY_FORM = { label: '', device_id: '', code: '' }
 type Db = ReturnType<typeof createDb>
@@ -73,12 +75,14 @@ export default function TrackingPage() {
   const { user, token } = useAuth()
   const [trackers, setTrackers] = useState<Tracker[]>([])
   const [showForm, setShowForm] = useState(false)
+  const [loading, setLoading] = useState(true)
   const db = useMemo(() => token ? createDb(token) : null, [token])
 
   async function load() {
     if (!db) return
     const data: any = await db.trackers.list().catch(() => [])
     setTrackers(data ?? [])
+    setLoading(false)
   }
 
   useEffect(() => { load() }, [db])
@@ -98,18 +102,26 @@ export default function TrackingPage() {
     <div className="px-4 py-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Trackers</h1>
-        <button onClick={() => setShowForm(v => !v)}
-          className="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium"
-          style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}>
-          <Plus size={16} /> Add
-        </button>
+        <div className="flex items-center gap-2">
+          <Link href="/map" className="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium border"
+            style={{ borderColor: 'var(--border)', color: 'var(--fg-muted)' }}>
+            <Map size={15} /> Map
+          </Link>
+          <button onClick={() => setShowForm(v => !v)}
+            className="flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium"
+            style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}>
+            <Plus size={16} /> Add
+          </button>
+        </div>
       </div>
 
-      {showForm && db && <RegisterForm db={db} onDone={() => { setShowForm(false); load() }} />}
-
-      {trackers.length === 0 && !showForm
-        ? <p className="text-sm text-center py-8" style={{ color: 'var(--fg-muted)' }}>No trackers registered yet.</p>
-        : trackers.map(t => <TrackerCard key={t.id} tracker={t} onToggle={() => toggle(t)} onDelete={() => remove(t.id)} />)}
+      {loading
+        ? <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} style={{ height: 80 }} />)}</div>
+        : showForm && db
+          ? <RegisterForm db={db} onDone={() => { setShowForm(false); load() }} />
+          : trackers.length === 0 && !showForm
+            ? <p className="text-sm text-center py-8" style={{ color: 'var(--fg-muted)' }}>No trackers registered yet.</p>
+            : trackers.map(t => <TrackerCard key={t.id} tracker={t} onToggle={() => toggle(t)} onDelete={() => remove(t.id)} />)}
     </div>
   )
 }

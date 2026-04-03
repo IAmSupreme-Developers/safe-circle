@@ -24,6 +24,25 @@ export type Profile = {
   proximity_buffer_meters: number
 }
 
+export type MapPoint = {
+  id: string
+  lat: number
+  lng: number
+  label: string
+  type: 'tracker' | 'guardian' | 'search-party'
+  color?: string   // custom hex, falls back to type default
+}
+
+export type SafeZone = {
+  id: string
+  lat: number
+  lng: number
+  radius_meters: number
+  label: string
+  color?: string   // custom hex, falls back to default
+  is_enabled: boolean
+}
+
 export const severityColor: Record<string, string> = {
   danger: 'var(--danger)',
   warning: 'var(--warning)',

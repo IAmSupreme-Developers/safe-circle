@@ -19,7 +19,17 @@ export const PROXIMITY_BUFFER_STEP = 10
 /** How long (ms) the "Saved!" confirmation shows after saving settings */
 export const SAVE_CONFIRM_DURATION_MS = 2000
 
-// --- Navigation ---
+// --- Map ---
+/** Default map zoom level */
+export const MAP_DEFAULT_ZOOM = 15
+/** Default pin colours per point type */
+export const PIN_COLORS = {
+  tracker:      '#f59e0b',   // amber
+  guardian:     '#3b82f6',   // blue
+  'search-party': '#10b981', // green
+} as const
+/** Default safe zone border colour */
+export const ZONE_DEFAULT_COLOR = '#f59e0b'
 export const NAV_LINKS = [
   { href: '/dashboard',    label: 'Home',     icon: 'LayoutDashboard' },
   { href: '/tracking',     label: 'Tracking', icon: 'MapPin'          },

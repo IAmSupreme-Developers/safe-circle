@@ -4,9 +4,10 @@ import { useAuth } from '@/app/components/AuthProvider'
 import { useRouter } from 'next/navigation'
 import { createDb } from '@/lib/db'
 import type { Profile } from '@/lib/types'
-import { Card, Input, Button } from '@/app/components/ui'
+import { Card, Input, Button, Skeleton } from '@/app/components/ui'
 import { LogOut, Save } from 'lucide-react'
 import { DEFAULT_PROXIMITY_BUFFER, MAX_PROXIMITY_BUFFER, PROXIMITY_BUFFER_STEP, SAVE_CONFIRM_DURATION_MS } from '@/lib/config'
+import Loader from '@/app/components/ado/loader'
 
 const DEFAULT: Omit<Profile, 'id'> = { full_name: '', phone: '', proximity_buffer_meters: DEFAULT_PROXIMITY_BUFFER }
 
@@ -15,6 +16,7 @@ export default function SettingsPage() {
   const router = useRouter()
   const [form, setForm] = useState(DEFAULT)
   const [saved, setSaved] = useState(false)
+  const [loading, setLoading] = useState(true)
   const db = useMemo(() => token ? createDb(token) : null, [token])
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: k === 'proximity_buffer_meters' ? Number(e.target.value) : e.target.value }))
@@ -23,8 +25,18 @@ export default function SettingsPage() {
     if (!db) return
     db.profile.get().then((data: any) => {
       if (data) setForm({ full_name: data.full_name ?? '', phone: data.phone ?? '', proximity_buffer_meters: data.proximity_buffer_meters ?? DEFAULT_PROXIMITY_BUFFER })
+      setLoading(false)
     })
   }, [db])
+
+  if (loading) return (
+    <div className="px-4 py-6 space-y-4">
+      <Skeleton style={{ height: 28, width: 100 }} />
+      <Skeleton style={{ height: 120 }} />
+      <Skeleton style={{ height: 100 }} />
+      <Skeleton style={{ height: 48 }} />
+    </div>
+  )
 
   async function save(e: React.FormEvent) {
     e.preventDefault()

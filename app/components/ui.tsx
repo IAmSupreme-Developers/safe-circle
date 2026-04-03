@@ -29,6 +29,13 @@ export function Input({ label, ...props }: React.InputHTMLAttributes<HTMLInputEl
   )
 }
 
+export function Skeleton({ className = '', style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <div className={`animate-pulse rounded-xl ${className}`}
+      style={{ background: 'var(--border)', ...style }} />
+  )
+}
+
 export function Button({ variant = 'primary', children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'danger' | 'ghost' }) {
   const styles: Record<string, CSSProperties> = {
     primary: { background: 'var(--accent)', color: 'var(--accent-fg)' },
