@@ -31,9 +31,9 @@ export const PIN_COLORS = {
 /** Default safe zone border colour */
 export const ZONE_DEFAULT_COLOR = '#f59e0b'
 export const NAV_LINKS = [
-  { href: '/dashboard',    label: 'Home',     icon: 'LayoutDashboard' },
-  { href: '/tracking',     label: 'Tracking', icon: 'MapPin'          },
-  { href: '/search-party', label: 'Search',   icon: 'Users'           },
-  { href: '/alerts',       label: 'Alerts',   icon: 'Bell'            },
-  { href: '/settings',     label: 'Settings', icon: 'Settings'        },
+  { href: '/dashboard', label: 'Home',    icon: 'Home'          },
+  { href: '/map',       label: 'Map',     icon: 'Map'           },
+  { href: '/feeds',     label: 'Feeds',   icon: 'MessageCircle' },
+  { href: '/tracking',  label: 'Devices', icon: 'Cpu'           },
+  { href: '/settings',  label: 'Profile', icon: 'UserCircle'    },
 ] as const

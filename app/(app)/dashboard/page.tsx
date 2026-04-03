@@ -1,130 +1,148 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
+import Link from 'next/link'
+import { Bell, ArrowUpRight } from 'lucide-react'
 import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
 import { useTrackerRealtime } from '@/lib/realtime'
-import { severityColor, type Alert, type Tracker, type MapPoint } from '@/lib/types'
-import { Card, SectionHeader, Skeleton } from '@/app/components/ui'
+import { Skeleton } from '@/app/components/ui'
+import { Avatar } from '@/app/components/shared'
+import FeedCard from '@/app/components/FeedCard'
 import { DASHBOARD_ALERT_LIMIT } from '@/lib/config'
-import { Bell, MapPin, Shield, Users } from 'lucide-react'
-import Link from 'next/link'
+import { QUICK_ACCESS_CARDS, STATIC_STATS } from '@/lib/data'
+import type { Post, Tracker } from '@/lib/types'
 
 const MapView = dynamic(() => import('@/app/components/MapView'), { ssr: false })
 
-function UnreadBadge({ count }: { count: number }) {
-  if (!count) return null
+function StatCard({ value, label }: { value: string; label: string }) {
   return (
-    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-bold"
-      style={{ background: 'var(--danger)', color: '#fff' }}>{count}</span>
+    <div className="flex flex-col gap-1 rounded-2xl p-4"
+      style={{ background: 'var(--bg-card)', boxShadow: 'var(--bg-card-shadow)' }}>
+      <span className="text-xl font-black">{value}</span>
+      <span className="text-xs" style={{ color: 'var(--fg-muted)' }}>{label}</span>
+    </div>
   )
 }
 
-function StatCard({ icon: Icon, label, value, href }: { icon: React.ElementType; label: string; value: React.ReactNode; href: string }) {
+function QuickCard({ img, tag, title, body, href }: typeof QUICK_ACCESS_CARDS[number]) {
   return (
-    <Link href={href} className="flex flex-col items-center gap-1 rounded-2xl border p-4"
-      style={{ background: 'var(--bg-card)', borderColor: 'var(--border)' }}>
-      <Icon size={20} style={{ color: 'var(--accent)' }} />
-      <span className="text-lg font-bold">{value}</span>
-      <span className="text-xs" style={{ color: 'var(--fg-muted)' }}>{label}</span>
+    <Link href={href} className="flex items-center justify-between rounded-2xl p-4 gap-4"
+      style={{ background: 'var(--bg-card)', boxShadow: 'var(--bg-card-shadow)' }}>
+      <div className="space-y-1 flex-1">
+        <p className="text-xs" style={{ color: 'var(--fg-muted)' }}>{tag}</p>
+        <p className="font-bold text-sm">{title}</p>
+        <p className="text-xs" style={{ color: 'var(--fg-muted)' }}>{body}</p>
+        <div className="mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold"
+          style={{ background: 'var(--primary)', color: '#fff' }}>
+          <ArrowUpRight size={12} /> Get Started
+        </div>
+      </div>
+      <img src={img} alt={title} className="w-24 h-24 object-contain flex-shrink-0" />
     </Link>
+  )
+}
+
+function SectionHeader({ title, href }: { title: string; href: string }) {
+  return (
+    <div className="flex items-center justify-between mb-3">
+      <p className="font-bold">{title}</p>
+      <Link href={href} className="text-xs font-semibold" style={{ color: 'var(--primary)' }}>see all</Link>
+    </div>
   )
 }
 
 export default function DashboardPage() {
   const { user, token } = useAuth()
   const db = useMemo(() => token ? createDb(token) : null, [token])
-  const [alerts, setAlerts] = useState<Alert[]>([])
+  const [profile, setProfile] = useState<any>(null)
   const [trackers, setTrackers] = useState<Tracker[]>([])
-  const [name, setName] = useState('')
+  const [posts, setPosts] = useState<Post[]>([])
   const [loadingTrackers, setLoadingTrackers] = useState(true)
-  const [loadingAlerts, setLoadingAlerts] = useState(true)
+  const [loadingPosts, setLoadingPosts] = useState(true)
 
   useEffect(() => {
     if (!user || !db) return
-    db.profile.get().then((data: any) => setName(data?.full_name ?? ''))
-    db.trackers.list().then((data: any) => { setTrackers(data ?? []); setLoadingTrackers(false) })
-    db.alerts.list(DASHBOARD_ALERT_LIMIT).then((data: any) => { setAlerts(data ?? []); setLoadingAlerts(false) })
+    db.profile.get().then((d: any) => setProfile(d))
+    db.trackers.list().then((d: any) => { setTrackers(d ?? []); setLoadingTrackers(false) })
+    db.posts.list(DASHBOARD_ALERT_LIMIT).then((d: any) => { setPosts(d ?? []); setLoadingPosts(false) })
   }, [db])
 
-  // Live tracker updates
-  useTrackerRealtime(user?.id, (updated) => {
+  useTrackerRealtime(user?.id, (updated) =>
     setTrackers(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t))
-  })
+  )
 
-  const mapPoints = useMemo<MapPoint[]>(() =>
+  const mapPoints = useMemo(() =>
     trackers.filter(t => t.last_lat && t.last_lng)
       .map(t => ({ id: t.id, lat: t.last_lat!, lng: t.last_lng!, label: t.label ?? '', type: 'tracker' as const }))
   , [trackers])
 
-  const unread = alerts.filter(a => !a.is_read).length
-
   return (
-    <div className="px-4 py-6 space-y-6">
+    <div className="px-4 py-6 space-y-6 pb-24">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm" style={{ color: 'var(--fg-muted)' }}>Welcome back</p>
-          <h1 className="text-xl font-bold">{name || 'Guardian'}</h1>
+        <div className="flex items-center gap-3">
+          <Avatar src={profile?.avatar_url} name={profile?.full_name} size={48} />
+          <div>
+            <p className="font-bold">{profile?.full_name ? `Hey ${profile.full_name}` : 'Hey there'}</p>
+            <p className="text-xs" style={{ color: 'var(--fg-muted)' }}>Welcome back</p>
+          </div>
         </div>
-        <Link href="/alerts" className="relative"><Bell size={24} /><UnreadBadge count={unread} /></Link>
+        <Link href="/alerts" className="h-10 w-10 rounded-full flex items-center justify-center relative"
+          style={{ background: 'var(--bg-card)', boxShadow: 'var(--bg-card-shadow)' }}>
+          <Bell size={18} />
+          <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full" style={{ background: '#f59e0b' }} />
+        </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
-        <StatCard icon={MapPin} label="Trackers" value={trackers.length} href="/tracking" />
-        <StatCard icon={Bell} label="Alerts" value={unread} href="/alerts" />
-        <StatCard icon={Users} label="Search" value="Party" href="/search-party" />
+      {/* Hero */}
+      <h1 className="text-3xl font-black leading-tight">
+        <span style={{ color: 'var(--primary)' }}>Take charge</span> of the situation with just{' '}
+        <span style={{ color: 'var(--primary)' }}>one click</span>
+      </h1>
+
+      {/* Stats */}
+      <div>
+        <p className="font-bold mb-1">Over View Statistics</p>
+        <p className="text-xs mb-3" style={{ color: 'var(--fg-muted)' }}>
+          statistics for the last past activities carried out and their resulting outcomes
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <StatCard value={`${trackers.length}`} label="Trackers" />
+          {STATIC_STATS.map(s => <StatCard key={s.label} {...s} />)}
+        </div>
       </div>
 
-      <section>
-        <SectionHeader title="Live Map" action={<Link href="/map" className="text-sm" style={{ color: 'var(--accent)' }}>Full screen</Link>} />
-        {loadingTrackers
-          ? <Skeleton style={{ height: 200 }} />
-          : mapPoints.length === 0
-            ? <Card><p className="text-sm text-center py-2" style={{ color: 'var(--fg-muted)' }}>No tracker locations yet.</p></Card>
-            : <div className="rounded-2xl overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
-                <MapView points={mapPoints} height={200} />
-              </div>}
-      </section>
+      {/* Quick Access */}
+      <div>
+        <p className="font-bold mb-1">Quick Access</p>
+        <p className="text-xs mb-3" style={{ color: 'var(--fg-muted)' }}>
+          Prioritise and set deadlines so you don't miss anything
+        </p>
+        <div className="space-y-3">
+          {QUICK_ACCESS_CARDS.map(c => <QuickCard key={c.title} {...c} />)}
+        </div>
+      </div>
 
-      <section>
-        <SectionHeader title="Trackers" action={<Link href="/tracking" className="text-sm" style={{ color: 'var(--accent)' }}>Manage</Link>} />
-        {loadingTrackers
-          ? <div className="space-y-2">{[1,2].map(i => <Skeleton key={i} style={{ height: 56 }} />)}</div>
-          : trackers.length === 0
-            ? <Card><p className="text-sm text-center py-2" style={{ color: 'var(--fg-muted)' }}>No trackers yet. <Link href="/tracking" style={{ color: 'var(--accent)' }}>Add one →</Link></p></Card>
-            : trackers.map(t => (
-              <Card key={t.id} style={{ marginBottom: 8 }}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Shield size={18} style={{ color: t.is_active ? 'var(--accent)' : 'var(--fg-muted)' }} />
-                    <span className="font-medium">{t.label}</span>
-                  </div>
-                  <span className="text-xs" style={{ color: 'var(--fg-muted)' }}>
-                    {t.last_seen ? new Date(t.last_seen).toLocaleTimeString() : 'Never'}
-                  </span>
-                </div>
-              </Card>
-            ))}
-      </section>
+      {/* Map widget */}
+      {!loadingTrackers && mapPoints.length > 0 && (
+        <div>
+          <SectionHeader title="Live Map" href="/map" />
+          <div className="rounded-2xl overflow-hidden" style={{ boxShadow: 'var(--bg-card-shadow)' }}>
+            <MapView points={mapPoints} height={180} />
+          </div>
+        </div>
+      )}
 
-      <section>
-        <SectionHeader title="Recent Alerts" action={<Link href="/alerts" className="text-sm" style={{ color: 'var(--accent)' }}>See all</Link>} />
-        {loadingAlerts
-          ? <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} style={{ height: 56 }} />)}</div>
-          : alerts.length === 0
-            ? <p className="text-sm" style={{ color: 'var(--fg-muted)' }}>No alerts yet.</p>
-            : alerts.map(a => (
-              <Card key={a.id} style={{ marginBottom: 8, opacity: a.is_read ? 0.6 : 1 }}>
-                <div className="flex items-start gap-2">
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full" style={{ background: severityColor[a.severity] }} />
-                  <div>
-                    <p className="text-sm">{a.message}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--fg-muted)' }}>{new Date(a.created_at).toLocaleString()}</p>
-                  </div>
-                </div>
-              </Card>
-            ))}
-      </section>
+      {/* Recent feeds */}
+      <div>
+        <SectionHeader title="Recent Activity Feeds" href="/feeds" />
+        {loadingPosts
+          ? <div className="space-y-3">{[1,2].map(i => <Skeleton key={i} style={{ height: 120 }} />)}</div>
+          : posts.length === 0
+            ? <p className="text-sm text-center py-4" style={{ color: 'var(--fg-muted)' }}>No community posts yet.</p>
+            : posts.map(p => <div key={p.id} className="mb-3"><FeedCard post={p} compact /></div>)}
+      </div>
     </div>
   )
 }
