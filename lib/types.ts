@@ -9,7 +9,7 @@ export type Alert = {
 
 export type Tracker = {
   id: string
-  label: string
+  label: string | null
   device_id: string
   is_active: boolean
   last_lat: number | null
@@ -20,8 +20,29 @@ export type Tracker = {
 export type Profile = {
   id: string
   full_name: string
+  avatar_url: string | null
   phone: string
   proximity_buffer_meters: number
+}
+
+export type Post = {
+  id: string
+  author_id: string
+  content: string
+  attachments: string[]
+  view_count: number
+  created_at: string
+  author?: { full_name: string; avatar_url: string | null }
+  comment_count?: number
+}
+
+export type Comment = {
+  id: string
+  post_id: string
+  author_id: string
+  content: string
+  created_at: string
+  author?: { full_name: string; avatar_url: string | null }
 }
 
 export type MapPoint = {
@@ -30,7 +51,7 @@ export type MapPoint = {
   lng: number
   label: string
   type: 'tracker' | 'guardian' | 'search-party'
-  color?: string   // custom hex, falls back to type default
+  color?: string
 }
 
 export type SafeZone = {
@@ -39,7 +60,7 @@ export type SafeZone = {
   lng: number
   radius_meters: number
   label: string
-  color?: string   // custom hex, falls back to default
+  color?: string
   is_enabled: boolean
 }
 

@@ -3,55 +3,72 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Shield } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
+  const [form, setForm] = useState({ email: '', password: '' })
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) router.replace('/dashboard')
     })
   }, [router])
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
-    setError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(true); setError('')
+    const { error } = await supabase.auth.signInWithPassword(form)
     if (error) { setError(error.message); setLoading(false) }
     else router.push('/dashboard')
   }
 
+  async function handleGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${location.origin}/dashboard` }
+    })
+  }
+
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center gap-2">
-          <Shield size={40} style={{ color: 'var(--accent)' }} />
-          <h1 className="text-2xl font-bold">SafeCircle</h1>
-          <p style={{ color: 'var(--fg-muted)' }} className="text-sm">Sign in to your account</p>
+    <div className="flex h-screen flex-col" style={{ background: 'var(--bg)' }}>
+      <div className="flex-1 bg-gradient-to-br from-blue-300 via-blue-400 to-indigo-500" />
+      <div className="rounded-t-3xl px-6 py-8 space-y-4 shadow-xl" style={{ background: 'var(--bg)' }}>
+        <button onClick={handleGoogle}
+          className="w-full flex items-center justify-center gap-3 rounded-full border py-3.5 text-sm font-medium"
+          style={{ borderColor: '#e0e0e0' }}>
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          Sign in with google
+        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+          <span className="text-sm" style={{ color: 'var(--fg-muted)' }}>or</span>
+          <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
         </div>
-        <form onSubmit={handleLogin} className="flex flex-col gap-4">
-          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)}
-            required className="rounded-xl border px-4 py-3 text-sm outline-none focus:ring-2"
-            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--fg)' }} />
-          <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)}
-            required className="rounded-xl border px-4 py-3 text-sm outline-none focus:ring-2"
-            style={{ background: 'var(--bg-card)', borderColor: 'var(--border)', color: 'var(--fg)' }} />
-          {error && <p className="text-sm" style={{ color: 'var(--danger)' }}>{error}</p>}
-          <button type="submit" disabled={loading}
-            className="rounded-xl py-3 font-semibold transition-opacity disabled:opacity-60"
-            style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}>
-            {loading ? 'Signing in…' : 'Sign In'}
-          </button>
-        </form>
-        <p className="mt-6 text-center text-sm" style={{ color: 'var(--fg-muted)' }}>
-          No account?{' '}
-          <Link href="/signup" style={{ color: 'var(--accent)' }} className="font-medium">Sign up</Link>
+        <input type="email" placeholder="Email" value={form.email} onChange={set('email')} required
+          className="w-full rounded-full px-5 py-3.5 text-sm outline-none"
+          style={{ background: 'var(--bg-input)', color: 'var(--fg)' }} />
+        <input type="password" placeholder="password" value={form.password} onChange={set('password')} required
+          className="w-full rounded-full px-5 py-3.5 text-sm outline-none"
+          style={{ background: 'var(--bg-input)', color: 'var(--fg)' }} />
+        {error && <p className="text-xs text-center" style={{ color: 'var(--danger)' }}>{error}</p>}
+        <button onClick={handleLogin} disabled={loading}
+          className="w-full rounded-full py-4 font-semibold text-sm disabled:opacity-60"
+          style={{ background: 'var(--primary)', color: '#fff' }}>
+          {loading ? 'Signing in…' : 'Sign In'}
+        </button>
+        <p className="text-xs text-center" style={{ color: 'var(--fg-muted)' }}>
+          Don't have an account?{' '}
+          <Link href="/signup" style={{ color: 'var(--primary)' }} className="font-semibold">Sign up here</Link>
         </p>
       </div>
     </div>

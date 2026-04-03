@@ -40,7 +40,7 @@ export default function MapPage() {
   const points = useMemo<MapPoint[]>(() => {
     const pts: MapPoint[] = trackers
       .filter(t => t.last_lat && t.last_lng)
-      .map(t => ({ id: t.id, lat: t.last_lat!, lng: t.last_lng!, label: t.label, type: 'tracker' }))
+      .map(t => ({ id: t.id, lat: t.last_lat!, lng: t.last_lng!, label: t.label ?? '', type: 'tracker' as const }))
     if (guardianPos) pts.push({ id: 'guardian', ...guardianPos, label: 'You', type: 'guardian' })
     return pts
   }, [trackers, guardianPos])

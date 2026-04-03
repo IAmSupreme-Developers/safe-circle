@@ -1,10 +1,10 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, MapPin, Users, Bell, Settings } from 'lucide-react'
+import { Home, Map, MessageCircle, Cpu, UserCircle } from 'lucide-react'
 import { NAV_LINKS } from '@/lib/config'
 
-const ICONS = { LayoutDashboard, MapPin, Users, Bell, Settings }
+const ICONS = { Home, Map, MessageCircle, Cpu, UserCircle }
 
 export default function BottomNav() {
   const path = usePathname()
@@ -17,7 +17,7 @@ export default function BottomNav() {
         return (
           <Link key={href} href={href}
             className="flex flex-1 flex-col items-center gap-1 py-3 text-xs transition-colors"
-            style={{ color: active ? 'var(--accent)' : 'var(--fg-muted)' }}>
+            style={{ color: active ? 'var(--primary)' : 'var(--fg-muted)' }}>
             <Icon size={20} strokeWidth={active ? 2.5 : 1.8} />
             {label}
           </Link>

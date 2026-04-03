@@ -54,7 +54,7 @@ export default function DashboardPage() {
 
   const mapPoints = useMemo<MapPoint[]>(() =>
     trackers.filter(t => t.last_lat && t.last_lng)
-      .map(t => ({ id: t.id, lat: t.last_lat!, lng: t.last_lng!, label: t.label, type: 'tracker' as const }))
+      .map(t => ({ id: t.id, lat: t.last_lat!, lng: t.last_lng!, label: t.label ?? '', type: 'tracker' as const }))
   , [trackers])
 
   const unread = alerts.filter(a => !a.is_read).length

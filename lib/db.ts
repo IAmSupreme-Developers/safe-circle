@@ -33,5 +33,28 @@ export function createDb(token: string) {
       markRead: (id: string) => r(`/api/alerts/${id}`, { method: 'PATCH' }),
       markAllRead: () => r('/api/alerts', { method: 'PATCH' }),
     },
+    posts: {
+      list: (limit?: number) => r(`/api/posts${limit ? `?limit=${limit}` : ''}`),
+      get: (id: string) => r(`/api/posts/${id}`),
+      create: (data: { content: string; attachments?: string[] }) =>
+        r('/api/posts', { method: 'POST', ...body(data) }),
+      delete: (id: string) => r(`/api/posts/${id}`, { method: 'DELETE' }),
+    },
+    comments: {
+      list: (postId: string) => r(`/api/posts/${postId}/comments`),
+      create: (postId: string, content: string) =>
+        r(`/api/posts/${postId}/comments`, { method: 'POST', ...body({ content }) }),
+      delete: (postId: string, commentId: string) =>
+        r(`/api/posts/${postId}/comments/${commentId}`, { method: 'DELETE' }),
+    },
+    zones: {
+      list: (trackerId: string) => r(`/api/trackers/${trackerId}/zones`),
+      create: (trackerId: string, data: object) =>
+        r(`/api/trackers/${trackerId}/zones`, { method: 'POST', ...body(data) }),
+      update: (trackerId: string, zoneId: string, data: object) =>
+        r(`/api/trackers/${trackerId}/zones/${zoneId}`, { method: 'PATCH', ...body(data) }),
+      delete: (trackerId: string, zoneId: string) =>
+        r(`/api/trackers/${trackerId}/zones/${zoneId}`, { method: 'DELETE' }),
+    },
   }
 }
