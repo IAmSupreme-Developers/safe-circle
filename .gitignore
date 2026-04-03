@@ -7,3 +7,4 @@ safecircle.md
 /.next
 .env.local
 .env
+/out
