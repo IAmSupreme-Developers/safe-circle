@@ -1,5 +1,5 @@
 async function api<T>(path: string, token: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
