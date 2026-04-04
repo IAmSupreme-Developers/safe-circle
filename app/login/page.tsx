@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { GoogleIcon } from '../components/ui'
+import { signInWithGoogle } from '@/lib/googleAuth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,12 +27,12 @@ export default function LoginPage() {
   }
 
   async function handleGoogle() {
-
-    
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${location.origin}/dashboard` }
-    })
+    try {
+      await signInWithGoogle()
+      router.push('/dashboard')
+    } catch (e: any) {
+      setError(e?.message ?? 'Google sign in failed')
+    }
   }
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>

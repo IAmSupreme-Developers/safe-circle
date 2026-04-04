@@ -3,7 +3,12 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'developers.iamsupreme.safecircle',
   appName: 'Safe Circle',
-  webDir: 'out'
+  webDir: 'out',
+  plugins: {
+    Browser: {
+      presentationStyle: 'popover',
+    },
+  },
 };
 
 export default config;
