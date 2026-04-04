@@ -8,6 +8,7 @@ import { Card, Input, Button, Skeleton } from '@/app/components/ui'
 import { Avatar } from '@/app/components/shared'
 import { LogOut, Save, MapPin, Bell, Shield, FileText, Lock } from 'lucide-react'
 import { DEFAULT_PROXIMITY_BUFFER, MAX_PROXIMITY_BUFFER, PROXIMITY_BUFFER_STEP, SAVE_CONFIRM_DURATION_MS } from '@/lib/config'
+import { useToast } from '@/app/components/Toast'
 
 const DEFAULT: Omit<Profile, 'id'> = { full_name: '', avatar_url: null, phone: '', proximity_buffer_meters: DEFAULT_PROXIMITY_BUFFER }
 
@@ -37,6 +38,7 @@ export default function SettingsPage() {
   const { user, token } = useAuth()
   const router = useRouter()
   const db = useMemo(() => token ? createDb(token) : null, [token])
+  const { toast } = useToast()
   const [form, setForm] = useState(DEFAULT)
   const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -61,9 +63,14 @@ export default function SettingsPage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault()
-    await db?.profile.update(form)
-    setSaved(true)
-    setTimeout(() => setSaved(false), SAVE_CONFIRM_DURATION_MS)
+    try {
+      await db?.profile.update(form)
+      toast('Settings saved', 'success')
+      setSaved(true)
+      setTimeout(() => setSaved(false), SAVE_CONFIRM_DURATION_MS)
+    } catch (e: any) {
+      toast(e?.message ?? 'Failed to save settings', 'error')
+    }
   }
 
   async function signOut() {

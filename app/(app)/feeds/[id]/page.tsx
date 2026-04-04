@@ -5,6 +5,7 @@ import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
 import { Skeleton } from '@/app/components/ui'
 import { Avatar, VerifiedBadge, BackButton } from '@/app/components/shared'
+import { useToast } from '@/app/components/Toast'
 import type { Post, Comment } from '@/lib/types'
 
 function CommentItem({ comment }: { comment: Comment }) {
@@ -26,6 +27,7 @@ function CommentItem({ comment }: { comment: Comment }) {
 
 export default function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const { token } = useAuth()
+  const { toast } = useToast()
   const db = useMemo(() => token ? createDb(token) : null, [token])
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
@@ -44,8 +46,12 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   async function submitComment(e: React.FormEvent) {
     e.preventDefault()
     if (!text.trim() || !postId || !db) return
-    const data: any = await db.comments.create(postId, text).catch(() => null)
-    if (data) { setComments(c => [...c, data]); setText('') }
+    try {
+      const data: any = await db.comments.create(postId, text)
+      if (data) { setComments(c => [...c, data]); setText('') }
+    } catch (e: any) {
+      toast(e?.message ?? 'Failed to post comment', 'error')
+    }
   }
 
   if (loading) return (

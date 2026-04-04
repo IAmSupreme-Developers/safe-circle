@@ -4,9 +4,10 @@ import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
 import type { Tracker } from '@/lib/types'
 import { Card, Input, Button } from '@/app/components/ui'
-import { Plus, Trash2, MapPin, ToggleLeft, ToggleRight, Map } from 'lucide-react'
+import { Plus, Trash2, MapPin, ToggleLeft, ToggleRight, Map, Shield } from 'lucide-react'
 import Link from 'next/link'
 import { Skeleton } from '@/app/components/ui'
+import { useToast } from '@/app/components/Toast'
 
 const EMPTY_FORM = { label: '', device_id: '', code: '' }
 type Db = ReturnType<typeof createDb>
@@ -73,6 +74,7 @@ function RegisterForm({ db, onDone }: { db: Db; onDone: () => void }) {
 
 export default function TrackingPage() {
   const { user, token } = useAuth()
+  const { toast } = useToast()
   const [trackers, setTrackers] = useState<Tracker[]>([])
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -80,22 +82,31 @@ export default function TrackingPage() {
 
   async function load() {
     if (!db) return
-    const data: any = await db.trackers.list().catch(() => [])
-    setTrackers(data ?? [])
-    setLoading(false)
+    try {
+      const data: any = await db.trackers.list()
+      setTrackers(data ?? [])
+    } catch (e: any) {
+      toast(e?.message ?? 'Failed to load trackers', 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => { load() }, [db])
 
   async function toggle(t: Tracker) {
-    await db?.trackers.update(t.id, { is_active: !t.is_active })
-    load()
+    try {
+      await db?.trackers.update(t.id, { is_active: !t.is_active })
+      load()
+    } catch (e: any) { toast(e?.message ?? 'Failed to update tracker', 'error') }
   }
 
   async function remove(id: string) {
     if (!confirm('Remove this tracker?')) return
-    await db?.trackers.delete(id)
-    load()
+    try {
+      await db?.trackers.delete(id)
+      load()
+    } catch (e: any) { toast(e?.message ?? 'Failed to remove tracker', 'error') }
   }
 
   return (

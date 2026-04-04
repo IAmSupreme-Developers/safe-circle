@@ -16,9 +16,14 @@ export function withAuth(
   handler: (req: NextRequest, user: User, params?: any) => Promise<NextResponse>
 ) {
   return async (req: NextRequest, context?: { params: Promise<any> }) => {
-    const user = await getAuthUser(req)
-    if (!user) return unauthorized()
-    const params = context?.params ? await context.params : undefined
-    return handler(req, user, params)
+    try {
+      const user = await getAuthUser(req)
+      if (!user) return unauthorized()
+      const params = context?.params ? await context.params : undefined
+      return await handler(req, user, params)
+    } catch (e: any) {
+      console.error('[API Error]', e)
+      return serverError(e?.message ?? 'Unexpected server error')
+    }
   }
 }
