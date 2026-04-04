@@ -1,7 +1,9 @@
 'use client'
 import { motion } from 'framer-motion'
+import { useThemeLang } from '../ThemeLangProvider'
 
 export default function CTA() {
+  const { t } = useThemeLang()
   return (
     <section id="download" style={{ padding: '140px 6vw', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(ellipse 80% 60% at 50% 50%,rgba(79,110,247,0.12),transparent)', pointerEvents: 'none' }} />
@@ -11,7 +13,7 @@ export default function CTA() {
         <div style={{ fontSize: 72, marginBottom: 24, filter: 'drop-shadow(0 0 40px rgba(79,110,247,0.6))' }}>🛡️</div>
         <h2 style={{ fontSize: 'clamp(2.2rem,5vw,4rem)', fontWeight: 900, letterSpacing: '-2px', marginBottom: 20, lineHeight: 1.1 }}>
           Your family deserves<br />
-          <span style={{ background: 'linear-gradient(135deg,#4F6EF7,#a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>to feel safe.</span>
+          <span style={{ background: 'linear-gradient(135deg,#4F6EF7,#a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('cta_title')}</span>
         </h2>
         <p style={{ fontSize: 18, color: '#64748b', marginBottom: 56, maxWidth: 480, margin: '0 auto 56px', lineHeight: 1.7 }}>
           Join 10,000+ families already using SafeCircle. Free to download. No subscription to get started.

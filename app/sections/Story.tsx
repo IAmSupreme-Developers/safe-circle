@@ -1,6 +1,7 @@
 'use client'
 import { useRef } from 'react'
 import { motion, useScroll, useTransform, useInView } from 'framer-motion'
+import { useThemeLang } from '../ThemeLangProvider'
 
 const chapters = [
   {
@@ -53,7 +54,7 @@ function Chapter({ chapter, index }: { chapter: typeof chapters[0]; index: numbe
   return (
     <div ref={ref} style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '80px 6vw', position: 'relative' }}>
       {/* Chapter number */}
-      <div style={{ position: 'absolute', top: 60, left: '6vw', fontSize: 120, fontWeight: 900, color: 'rgba(255,255,255,0.02)', lineHeight: 1, userSelect: 'none' }}>
+      <div style={{ position: 'absolute', top: 60, left: '6vw', fontSize: 120, fontWeight: 900, color: 'rgba(255,255,255,0.02)', lineHeight: 1, userSelect: 'none', overflow: 'hidden', maxWidth: '100%' }}>
         {String(index + 1).padStart(2, '0')}
       </div>
 
@@ -97,15 +98,16 @@ function Chapter({ chapter, index }: { chapter: typeof chapters[0]; index: numbe
 
 export default function Story() {
   const ref = useRef(null)
+  const { t } = useThemeLang()
   const { scrollYProgress } = useScroll({ target: ref })
   const lineHeight = useTransform(scrollYProgress, [0, 1], ['0%', '100%'])
 
   return (
-    <section id="story" ref={ref} style={{ position: 'relative', background: 'linear-gradient(180deg,#060b18 0%,#080d1f 50%,#060b18 100%)' }}>
+    <section id="story" ref={ref} style={{ position: 'relative', background: 'var(--bg)' }}>
       {/* Intro */}
       <div style={{ textAlign: 'center', padding: '100px 6vw 60px' }}>
         <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-          <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>A true story, retold every day</p>
+          <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 16 }}>{t('story_intro')}</p>
           <h2 style={{ fontSize: 'clamp(2rem,4vw,3.2rem)', fontWeight: 900, letterSpacing: '-1px', marginBottom: 20 }}>
             44 minutes that changed<br />
             <span style={{ background: 'linear-gradient(135deg,#4F6EF7,#a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>everything for one family.</span>

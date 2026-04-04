@@ -19,8 +19,8 @@ export default function HowItWorks() {
       </motion.div>
 
       <div style={{ position: 'relative' }}>
-        {/* Connecting line */}
-        <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: 'rgba(79,110,247,0.1)', transform: 'translateX(-50%)' }} />
+        {/* Connecting line — hidden on mobile */}
+        <div className="timeline-line" style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: 'rgba(79,110,247,0.1)', transform: 'translateX(-50%)' }} />
 
         {steps.map((s, i) => {
           const ref = useRef(null)
@@ -34,7 +34,8 @@ export default function HowItWorks() {
 
               <motion.div initial={{ opacity: 0, x: isLeft ? -50 : 50 }} animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ duration: 0.7, ease: 'easeOut' }}
-                style={{ width: '44%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: '28px 32px' }}>
+                style={{ width: '44%', background: 'var(--bg-card)', border: '1px solid var(--bg-card-border)', borderRadius: 20, padding: '28px 32px' }}
+              className="timeline-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
                   <div style={{ width: 48, height: 48, borderRadius: 14, background: `${s.color}18`, border: `1px solid ${s.color}33`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>{s.icon}</div>
                   <div>

@@ -12,7 +12,7 @@ const features = [
 
 export default function Features() {
   return (
-    <section id="features" style={{ padding: '120px 6vw', background: 'rgba(255,255,255,0.015)' }}>
+    <section id="features" style={{ padding: '120px 6vw', background: 'var(--bg-section)' }}>
       <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 72 }}>
         <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>Everything you need</p>
         <h2 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 900, letterSpacing: '-1px' }}>Built for real emergencies</h2>
@@ -24,7 +24,7 @@ export default function Features() {
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }} transition={{ delay: i * 0.08 }}
             whileHover={{ y: -6, transition: { duration: 0.2 } }}
-            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 24, overflow: 'hidden', cursor: 'default' }}>
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--bg-card-border)', borderRadius: 24, overflow: 'hidden', cursor: 'default' }}>
             <div style={{ height: 180, overflow: 'hidden', position: 'relative' }}>
               <img src={f.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.4s' }} />
               <div style={{ position: 'absolute', inset: 0, background: `linear-gradient(180deg,transparent 40%,#060b18)` }} />

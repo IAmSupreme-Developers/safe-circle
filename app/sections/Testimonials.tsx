@@ -12,7 +12,7 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section id="community" style={{ padding: '120px 6vw', background: 'rgba(255,255,255,0.015)', overflow: 'hidden' }}>
+    <section id="community" style={{ padding: '120px 6vw', background: 'var(--bg-section)', overflow: 'hidden' }}>
       <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 72 }}>
         <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>Real families, real stories</p>
         <h2 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 900, letterSpacing: '-1px' }}>
@@ -29,11 +29,11 @@ export default function Testimonials() {
       </motion.div>
 
       {/* Scrolling testimonials */}
-      <div style={{ display: 'flex', gap: 20, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', gap: 20, overflow: 'hidden', width: '100%' }}>
         <motion.div animate={{ x: [0, -1800] }} transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
           style={{ display: 'flex', gap: 20, flexShrink: 0 }}>
           {[...testimonials, ...testimonials].map((t, i) => (
-            <div key={i} style={{ width: 320, flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: '24px 24px 28px' }}>
+            <div key={i} style={{ width: 320, flexShrink: 0, background: 'var(--bg-card)', border: '1px solid var(--bg-card-border)', borderRadius: 20, padding: '24px 24px 28px' }}>
               <div style={{ display: 'flex', gap: 2, marginBottom: 16 }}>
                 {'★★★★★'.split('').map((s, j) => <span key={j} style={{ color: '#f59e0b', fontSize: 14 }}>{s}</span>)}
               </div>

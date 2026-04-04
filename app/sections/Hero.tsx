@@ -1,9 +1,11 @@
 'use client'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
+import { useThemeLang } from '../ThemeLangProvider'
 
 export default function Hero() {
   const ref = useRef(null)
+  const { t } = useThemeLang()
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
   const y = useTransform(scrollYProgress, [0, 1], ['0%', '30%'])
   const opacity = useTransform(scrollYProgress, [0, 0.6], [1, 0])
@@ -28,7 +30,7 @@ export default function Hero() {
         <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.8 }}
           style={{ fontSize: 'clamp(2.8rem,6vw,5rem)', fontWeight: 900, lineHeight: 1.08, letterSpacing: '-2px', marginBottom: 28 }}>
           When every second<br />
-          <span style={{ background: 'linear-gradient(135deg,#4F6EF7 30%,#a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>matters most.</span>
+          <span style={{ background: 'linear-gradient(135deg,#4F6EF7 30%,#a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('tagline')}</span>
         </motion.h1>
 
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
@@ -39,7 +41,7 @@ export default function Hero() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
           style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 80 }}>
           <a href="#download" style={{ background: 'linear-gradient(135deg,#4F6EF7,#7c3aed)', color: '#fff', padding: '18px 44px', borderRadius: 999, fontSize: 16, fontWeight: 700, boxShadow: '0 8px 40px rgba(79,110,247,0.45)', display: 'inline-block' }}>
-            Download Free →
+            {t('download')} →
           </a>
           <a href="#story" style={{ color: '#94a3b8', padding: '18px 32px', borderRadius: 999, fontSize: 15, fontWeight: 600, border: '1px solid rgba(255,255,255,0.1)', display: 'inline-block' }}>
             ▶ Watch the story
