@@ -1,2 +1,1 @@
-import SplashScreen from './components/SplashScreen'
-export default function Home() { return <SplashScreen /> }
+export { default } from './Landing'
