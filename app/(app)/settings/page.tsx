@@ -54,11 +54,12 @@ export default function SettingsPage() {
       if (data) setForm({ full_name: data.full_name ?? '', avatar_url: data.avatar_url ?? null, phone: data.phone ?? '', proximity_buffer_meters: data.proximity_buffer_meters ?? DEFAULT_PROXIMITY_BUFFER })
       setLoading(false)
     })
-    navigator.permissions?.query({ name: 'geolocation' }).then(r => setLocationEnabled(r.state === 'granted'))
   }, [db])
 
   function requestLocation() {
-    navigator.geolocation.getCurrentPosition(() => setLocationEnabled(true), () => setLocationEnabled(false))
+    import('@/lib/geolocation').then(({ getCurrentPosition }) =>
+      getCurrentPosition().then(() => setLocationEnabled(true)).catch(() => setLocationEnabled(false))
+    )
   }
 
   async function save(e: React.FormEvent) {

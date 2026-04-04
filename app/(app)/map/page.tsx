@@ -23,13 +23,11 @@ export default function MapPage() {
 
   // Live guardian position
   useEffect(() => {
-    if (!navigator.geolocation) return
-    const id = navigator.geolocation.watchPosition(
-      ({ coords }) => setGuardianPos({ lat: coords.latitude, lng: coords.longitude }),
-      () => {},
-      { enableHighAccuracy: true }
-    )
-    return () => navigator.geolocation.clearWatch(id)
+    let cleanup: (() => void) | undefined
+    import('@/lib/geolocation').then(({ watchPosition }) => {
+      watchPosition(pos => setGuardianPos(pos)).then(fn => { cleanup = fn })
+    })
+    return () => cleanup?.()
   }, [])
 
   // Live tracker updates via Supabase Realtime

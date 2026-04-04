@@ -8,6 +8,7 @@ import { Skeleton, ErrorMessage } from '@/app/components/ui'
 import FeedCard from '@/app/components/FeedCard'
 import { useToast } from '@/app/components/Toast'
 import { uploadPostImage } from '@/lib/mediaUpload'
+import { getCurrentPosition } from '@/lib/geolocation'
 import type { Post } from '@/lib/types'
 
 function CreatePostForm({ onDone, db }: { onDone: () => void; db: ReturnType<typeof createDb> }) {
@@ -34,10 +35,11 @@ function CreatePostForm({ onDone, db }: { onDone: () => void; db: ReturnType<typ
 
   async function getLocation() {
     setLocLoading(true)
-    navigator.geolocation.getCurrentPosition(
-      pos => { setLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocLoading(false) },
-      () => { toast('Could not get location', 'error'); setLocLoading(false) }
-    )
+    try {
+      const pos = await getCurrentPosition()
+      setLocation(pos)
+    } catch { toast('Could not get location', 'error') }
+    finally { setLocLoading(false) }
   }
 
   async function submit(e: React.FormEvent) {
