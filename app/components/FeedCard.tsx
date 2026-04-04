@@ -51,6 +51,20 @@ export default function FeedCard({ post, userId, onDelete, compact = false }: Pr
         <p className="text-sm leading-relaxed">{post.content}</p>
       </button>
 
+      {post.is_resolved && (
+        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+          style={{ background: 'rgba(34,197,94,0.12)', color: '#22c55e' }}>✓ Resolved</span>
+      )}
+
+      {/* Attachments */}
+      {post.attachments?.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto">
+          {post.attachments.map((url, i) => (
+            <img key={i} src={url} alt="" className="h-32 w-32 rounded-xl object-cover flex-shrink-0" />
+          ))}
+        </div>
+      )}
+
       {/* Stats */}
       <div className="flex items-center gap-4 text-xs" style={{ color: 'var(--fg-muted)' }}>
         <span>📎 {post.attachments?.length ?? 0}</span>

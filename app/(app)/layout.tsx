@@ -3,6 +3,7 @@ import { useAuth } from '../components/AuthProvider'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import BottomNav from '../components/BottomNav'
+import AIAssistant from '../components/AIAssistant'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -18,6 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col min-h-screen pb-16">
       <main className="flex-1">{children}</main>
       <BottomNav />
+      <AIAssistant />
     </div>
   )
 }

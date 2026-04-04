@@ -19,3 +19,11 @@ export const DELETE = withAuth(async (_req, user, { id }) => {
   if (error) return serverError(error.message)
   return ok({ success: true })
 })
+
+export const PATCH = withAuth(async (_req, user, { id }) => {
+  const { data: post } = await supabaseAdmin.from('posts').select('is_resolved, author_id').eq('id', id).single()
+  if (!post || post.author_id !== user.id) return notFound('Post not found')
+  const { data, error } = await supabaseAdmin.from('posts').update({ is_resolved: !post.is_resolved }).eq('id', id).select().single()
+  if (error) return serverError(error.message)
+  return ok(data)
+})

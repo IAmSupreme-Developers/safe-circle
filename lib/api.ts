@@ -6,6 +6,7 @@ export const ok = (data: unknown, status = 200) => NextResponse.json(data, { sta
 export const err = (message: string, status: number) => NextResponse.json({ error: message }, { status })
 
 export const unauthorized = () => err('Unauthorized', 401)
+export const forbidden = () => err('Forbidden', 403)
 export const notFound = (msg = 'Not found.') => err(msg, 404)
 export const conflict = (msg: string) => err(msg, 409)
 export const badRequest = (msg = 'Missing fields') => err(msg, 400)

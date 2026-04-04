@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useMemo, useState } from 'react'
-import { Send } from 'lucide-react'
+import { Send, Trash2 } from 'lucide-react'
 import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
 import { Skeleton } from '@/app/components/ui'
@@ -8,7 +8,44 @@ import { Avatar, VerifiedBadge, BackButton } from '@/app/components/shared'
 import { useToast } from '@/app/components/Toast'
 import type { Post, Comment } from '@/lib/types'
 
-function CommentItem({ comment }: { comment: Comment }) {
+function PostCarousel({ post }: { post: Post }) {
+  const [idx, setIdx] = useState(0)
+  const total = 1 + (post.attachments?.length ?? 0)
+  const ref = (node: HTMLDivElement | null) => {
+    if (!node) return
+    const onScroll = () => setIdx(Math.round(node.scrollLeft / node.offsetWidth))
+    node.addEventListener('scroll', onScroll, { passive: true })
+  }
+  return (
+    <div>
+      <div ref={ref} className="flex overflow-x-auto snap-x snap-mandatory"
+        style={{ scrollbarWidth: 'none' }}>
+        {/* Slide 0: text */}
+        <div className={`snap-center flex-shrink-0 w-full px-2 ${post.content.length < 120 ? 'flex items-center justify-center' : ''}`}>
+          <p className={`text-lg font-medium leading-relaxed ${post.content.length < 120 ? 'text-center' : 'text-left'}`}>
+            {post.content}
+          </p>
+        </div>
+        {/* Slides 1+: images */}
+        {post.attachments?.map((url, i) => (
+          <div key={i} className="snap-center flex-shrink-0 w-full">
+            <img src={url} alt="" className="w-full object-cover rounded-xl" style={{ height: 260 }} />
+          </div>
+        ))}
+      </div>
+      {total > 1 && (
+        <div className="flex justify-center gap-1.5 mt-3">
+          {Array.from({ length: total }).map((_, i) => (
+            <span key={i} className="h-2 w-2 rounded-full transition-all"
+              style={{ background: i === idx ? 'var(--primary)' : 'var(--border)' }} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CommentItem({ comment, canDelete, onDelete }: { comment: Comment; canDelete: boolean; onDelete: () => void }) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-2">
@@ -18,6 +55,11 @@ function CommentItem({ comment }: { comment: Comment }) {
           <p className="text-xs" style={{ color: 'var(--fg-muted)' }}>{new Date(comment.created_at).toLocaleString()}</p>
         </div>
         <VerifiedBadge size={6} />
+        {canDelete && (
+          <button onClick={onDelete}>
+            <Trash2 size={14} style={{ color: 'var(--fg-muted)' }} />
+          </button>
+        )}
       </div>
       <p className="text-sm leading-relaxed pl-12">{comment.content}</p>
       <hr className="mt-4" style={{ borderColor: 'var(--border)' }} />
@@ -26,12 +68,13 @@ function CommentItem({ comment }: { comment: Comment }) {
 }
 
 export default function PostPage({ params }: { params: Promise<{ id: string }> }) {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const { toast } = useToast()
   const db = useMemo(() => token ? createDb(token) : null, [token])
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [text, setText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [postId, setPostId] = useState<string | null>(null)
 
@@ -43,14 +86,27 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     db.comments.list(postId).then((d: any) => setComments(d ?? []))
   }, [db, postId])
 
+  async function deleteComment(commentId: string) {
+    if (!postId || !db) return
+    try {
+      await db.comments.delete(postId, commentId)
+      setComments(c => c.filter(x => x.id !== commentId))
+    } catch (e: any) {
+      toast(e?.message ?? 'Failed to delete comment', 'error')
+    }
+  }
+
   async function submitComment(e: React.FormEvent) {
     e.preventDefault()
-    if (!text.trim() || !postId || !db) return
+    if (!text.trim() || !postId || !db || submitting) return
+    setSubmitting(true)
     try {
       const data: any = await db.comments.create(postId, text)
       if (data) { setComments(c => [...c, data]); setText('') }
     } catch (e: any) {
       toast(e?.message ?? 'Failed to post comment', 'error')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -65,7 +121,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
   if (!post) return <p className="p-8 text-center" style={{ color: 'var(--fg-muted)' }}>Post not found.</p>
 
   return (
-    <div className="flex flex-col min-h-screen pb-24">
+    <div className="flex flex-col min-h-screen pb-32">
       <div className="px-4 py-6 flex-1 space-y-4">
         <BackButton href="/feeds" />
 
@@ -79,41 +135,51 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           <VerifiedBadge size={7} />
         </div>
         <hr style={{ borderColor: 'var(--border)' }} />
-
-        <p className="text-lg font-medium text-center leading-relaxed px-2">{post.content}</p>
-
-        {post.attachments?.length > 0 && (
-          <div className="flex justify-center gap-2">
-            {post.attachments.map((_, i) => (
-              <span key={i} className="h-2.5 w-2.5 rounded-full" style={{ background: 'var(--border)' }} />
-            ))}
-          </div>
+        {/* Resolve toggle — only post author */}
+        {post.author_id === user?.id && (
+          <button onClick={async () => {
+            const updated: any = await db?.posts.resolve(post.id)
+            if (updated) setPost(p => p ? { ...p, is_resolved: updated.is_resolved } : p)
+          }} className="w-full rounded-full py-2.5 text-sm font-semibold border transition-all"
+            style={{
+              borderColor: post.is_resolved ? 'var(--success, #22c55e)' : 'var(--border)',
+              color: post.is_resolved ? '#22c55e' : 'var(--fg-muted)',
+              background: post.is_resolved ? 'rgba(34,197,94,0.08)' : 'transparent'
+            }}>
+            {post.is_resolved ? '✓ Marked as Resolved' : 'Mark as Resolved'}
+          </button>
         )}
+        {post.is_resolved && post.author_id !== user?.id && (
+          <p className="text-center text-sm font-semibold" style={{ color: '#22c55e' }}>✓ Resolved</p>
+        )}
+
+        <PostCarousel post={post} />
 
         <p className="font-bold text-lg">comments</p>
         <div className="space-y-4">
-          {comments.map(c => <CommentItem key={c.id} comment={c} />)}
+          {comments.map(c => (
+            <CommentItem key={c.id} comment={c}
+              canDelete={c.author_id === user?.id || post.author_id === user?.id}
+              onDelete={() => deleteComment(c.id)} />
+          ))}
         </div>
       </div>
 
-      {/* Reply box */}
-      <div className="sticky bottom-16 px-4 pb-4">
-        <div className="rounded-2xl p-4 space-y-3"
-          style={{ background: 'var(--bg-card)', boxShadow: '0 -4px 20px rgba(0,0,0,0.08)' }}>
-          <p className="text-sm font-semibold text-center">Message Dialogue box</p>
-          <form onSubmit={submitComment} className="space-y-3">
-            <textarea value={text} onChange={e => setText(e.target.value)}
-              placeholder="text here" rows={3}
-              className="w-full rounded-xl border px-4 py-3 text-sm outline-none resize-none"
-              style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--fg)' }} />
-            <button type="submit"
-              className="w-full flex items-center justify-center gap-2 rounded-full py-3.5 font-semibold text-sm"
-              style={{ background: 'var(--primary)', color: '#fff' }}>
-              <Send size={15} /> Submit message
-            </button>
-          </form>
-        </div>
-      </div>
+      {/* Reply bar */}
+      <form onSubmit={submitComment}
+        className="fixed bottom-16 left-0 right-0 mx-4 flex items-center gap-2 rounded-full px-4 py-2"
+        style={{ background: 'var(--bg-card)', boxShadow: '0 2px 16px rgba(0,0,0,0.10)' }}>
+        <input value={text} onChange={e => setText(e.target.value)}
+          placeholder="Write a comment…"
+          disabled={submitting}
+          className="flex-1 bg-transparent text-sm outline-none py-2"
+          style={{ color: 'var(--fg)' }} />
+        <button type="submit" disabled={!text.trim() || submitting}
+          className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-60"
+          style={{ background: '#4F6EF7', color: '#fff', minWidth: 36 }}>
+          <Send size={15} />
+        </button>
+      </form>
     </div>
   )
 }

@@ -65,7 +65,7 @@ export default function DashboardPage() {
     if (!user || !db) return
     db.profile.get().then((d: any) => setProfile(d))
     db.trackers.list().then((d: any) => { setTrackers(d ?? []); setLoadingTrackers(false) })
-    db.posts.list(DASHBOARD_ALERT_LIMIT).then((d: any) => { setPosts(d ?? []); setLoadingPosts(false) })
+    db.posts.list(DASHBOARD_ALERT_LIMIT, true).then((d: any) => { setPosts(d ?? []); setLoadingPosts(false) })
   }, [db])
 
   useTrackerRealtime(user?.id, (updated) =>

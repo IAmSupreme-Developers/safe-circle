@@ -30,6 +30,14 @@ export type Post = {
   author_id: string
   content: string
   attachments: string[]
+  location_lat: number | null
+  location_lng: number | null
+  category: string
+  subject: string | null
+  city: string | null
+  country: string | null
+  tags: string[]
+  is_resolved: boolean
   view_count: number
   created_at: string
   author?: { full_name: string; avatar_url: string | null }

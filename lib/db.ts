@@ -34,11 +34,19 @@ export function createDb(token: string) {
       markAllRead: () => r('/api/alerts', { method: 'PATCH' }),
     },
     posts: {
-      list: (limit?: number) => r(`/api/posts${limit ? `?limit=${limit}` : ''}`),
+      list: (limit?: number, mine?: boolean, category?: string) => {
+        const p = new URLSearchParams()
+        if (limit) p.set('limit', String(limit))
+        if (mine) p.set('mine', '1')
+        if (category) p.set('category', category)
+        const qs = p.toString()
+        return r(`/api/posts${qs ? '?' + qs : ''}`)
+      },
       get: (id: string) => r(`/api/posts/${id}`),
-      create: (data: { content: string; attachments?: string[] }) =>
+      create: (data: { content: string; attachments?: string[]; location_lat?: number | null; location_lng?: number | null }) =>
         r('/api/posts', { method: 'POST', ...body(data) }),
       delete: (id: string) => r(`/api/posts/${id}`, { method: 'DELETE' }),
+      resolve: (id: string) => r(`/api/posts/${id}`, { method: 'PATCH' }),
     },
     comments: {
       list: (postId: string) => r(`/api/posts/${postId}/comments`),
