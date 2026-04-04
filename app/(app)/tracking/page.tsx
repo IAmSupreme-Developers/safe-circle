@@ -21,6 +21,9 @@ function TrackerCard({ tracker, onToggle, onDelete }: { tracker: Tracker; onTogg
           <p className="text-xs" style={{ color: 'var(--fg-muted)' }}>ID: {tracker.device_id}</p>
         </div>
         <div className="flex items-center gap-3">
+          <Link href={`/tracking/zones?id=${tracker.id}`}>
+            <Shield size={18} style={{ color: 'var(--primary)' }} />
+          </Link>
           <button onClick={onToggle}>
             {tracker.is_active
               ? <ToggleRight size={24} style={{ color: 'var(--accent)' }} />

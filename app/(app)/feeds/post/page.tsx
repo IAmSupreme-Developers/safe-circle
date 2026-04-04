@@ -1,5 +1,6 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Send, Trash2 } from 'lucide-react'
 import { useAuth } from '@/app/components/AuthProvider'
 import { createDb } from '@/lib/db'
@@ -18,15 +19,10 @@ function PostCarousel({ post }: { post: Post }) {
   }
   return (
     <div>
-      <div ref={ref} className="flex overflow-x-auto snap-x snap-mandatory"
-        style={{ scrollbarWidth: 'none' }}>
-        {/* Slide 0: text */}
+      <div ref={ref} className="flex overflow-x-auto snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
         <div className={`snap-center flex-shrink-0 w-full px-2 ${post.content.length < 120 ? 'flex items-center justify-center' : ''}`}>
-          <p className={`text-lg font-medium leading-relaxed ${post.content.length < 120 ? 'text-center' : 'text-left'}`}>
-            {post.content}
-          </p>
+          <p className={`text-lg font-medium leading-relaxed ${post.content.length < 120 ? 'text-center' : 'text-left'}`}>{post.content}</p>
         </div>
-        {/* Slides 1+: images */}
         {post.attachments?.map((url, i) => (
           <div key={i} className="snap-center flex-shrink-0 w-full">
             <img src={url} alt="" className="w-full object-cover rounded-xl" style={{ height: 260 }} />
@@ -56,9 +52,7 @@ function CommentItem({ comment, canDelete, onDelete }: { comment: Comment; canDe
         </div>
         <VerifiedBadge size={6} />
         {canDelete && (
-          <button onClick={onDelete}>
-            <Trash2 size={14} style={{ color: 'var(--fg-muted)' }} />
-          </button>
+          <button onClick={onDelete}><Trash2 size={14} style={{ color: 'var(--fg-muted)' }} /></button>
         )}
       </div>
       <p className="text-sm leading-relaxed pl-12">{comment.content}</p>
@@ -67,18 +61,17 @@ function CommentItem({ comment, canDelete, onDelete }: { comment: Comment; canDe
   )
 }
 
-export default function PostPage({ params }: { params: Promise<{ id: string }> }) {
+function PostPageInner() {
   const { token, user } = useAuth()
   const { toast } = useToast()
+  const searchParams = useSearchParams()
+  const postId = searchParams.get('id')
   const db = useMemo(() => token ? createDb(token) : null, [token])
   const [post, setPost] = useState<Post | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [text, setText] = useState('')
-  const [submitting, setSubmitting] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [postId, setPostId] = useState<string | null>(null)
-
-  useEffect(() => { params.then(p => setPostId(p.id)) }, [params])
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!db || !postId) return
@@ -124,8 +117,6 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
     <div className="flex flex-col min-h-screen pb-32">
       <div className="px-4 py-6 flex-1 space-y-4">
         <BackButton href="/feeds" />
-
-        {/* Post header */}
         <div className="flex items-center gap-3">
           <Avatar src={post.author?.avatar_url} name={post.author?.full_name} size={52} />
           <div className="flex-1">
@@ -135,7 +126,7 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
           <VerifiedBadge size={7} />
         </div>
         <hr style={{ borderColor: 'var(--border)' }} />
-        {/* Resolve toggle — only post author */}
+
         {post.author_id === user?.id && (
           <button onClick={async () => {
             const updated: any = await db?.posts.resolve(post.id)
@@ -165,21 +156,23 @@ export default function PostPage({ params }: { params: Promise<{ id: string }> }
         </div>
       </div>
 
-      {/* Reply bar */}
       <form onSubmit={submitComment}
         className="fixed bottom-16 left-0 right-0 mx-4 flex items-center gap-2 rounded-full px-4 py-2"
         style={{ background: 'var(--bg-card)', boxShadow: '0 2px 16px rgba(0,0,0,0.10)' }}>
         <input value={text} onChange={e => setText(e.target.value)}
-          placeholder="Write a comment…"
-          disabled={submitting}
+          placeholder="Write a comment…" disabled={submitting}
           className="flex-1 bg-transparent text-sm outline-none py-2"
           style={{ color: 'var(--fg)' }} />
         <button type="submit" disabled={!text.trim() || submitting}
-          className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0 disabled:opacity-60"
+          className="h-9 w-9 rounded-full flex items-center justify-center disabled:opacity-60 flex-shrink-0"
           style={{ background: '#4F6EF7', color: '#fff', minWidth: 36 }}>
           <Send size={15} />
         </button>
       </form>
     </div>
   )
+}
+
+export default function PostPage() {
+  return <Suspense><PostPageInner /></Suspense>
 }

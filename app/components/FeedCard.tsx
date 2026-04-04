@@ -30,7 +30,7 @@ export default function FeedCard({ post, userId, onDelete, compact = false }: Pr
         {!compact && (
           <div className="flex items-center gap-3">
             <VerifiedBadge size={7} />
-            <button onClick={() => router.push(`/feeds/${post.id}`)}>
+            <button onClick={() => router.push(`/feeds/post?id=${post.id}`)}>
               <Reply size={16} style={{ color: 'var(--fg-muted)' }} />
             </button>
             {post.author_id === userId && onDelete && (
@@ -46,7 +46,7 @@ export default function FeedCard({ post, userId, onDelete, compact = false }: Pr
       <hr style={{ borderColor: 'var(--border)' }} />
 
       {/* Content */}
-      <button onClick={() => !compact && router.push(`/feeds/${post.id}`)}
+      <button onClick={() => !compact && router.push(`/feeds/post?id=${post.id}`)}
         className="w-full text-left">
         <p className="text-sm leading-relaxed">{post.content}</p>
       </button>
