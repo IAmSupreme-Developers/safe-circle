@@ -12,17 +12,17 @@ export default function CTA() {
       <motion.div initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ position: 'relative', zIndex: 1 }}>
         <div style={{ fontSize: 72, marginBottom: 24, filter: 'drop-shadow(0 0 40px rgba(79,110,247,0.6))' }}>🛡️</div>
         <h2 style={{ fontSize: 'clamp(2.2rem,5vw,4rem)', fontWeight: 900, letterSpacing: '-2px', marginBottom: 20, lineHeight: 1.1 }}>
-          Your family deserves<br />
+          {t('cta_headline1')}<br />
           <span style={{ background: 'linear-gradient(135deg,#4F6EF7,#a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('cta_title')}</span>
         </h2>
         <p style={{ fontSize: 18, color: '#64748b', marginBottom: 56, maxWidth: 480, margin: '0 auto 56px', lineHeight: 1.7 }}>
-          Join 10,000+ families already using SafeCircle. Free to download. No subscription to get started.
+          {t('cta_sub')}
         </p>
 
         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 60 }}>
           {[
-            { icon: '🤖', store: 'Get it on', name: 'Google Play' },
-            { icon: '🍎', store: 'Download on the', name: 'App Store' },
+            { icon: '🤖', store: t('cta_google'), name: 'Google Play' },
+            { icon: '🍎', store: t('cta_apple'), name: 'App Store' },
           ].map(b => (
             <motion.a key={b.name} href="#" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
               style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#f1f5f9', padding: '16px 32px', borderRadius: 16, fontWeight: 700, backdropFilter: 'blur(8px)' }}>
@@ -36,7 +36,7 @@ export default function CTA() {
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 40, flexWrap: 'wrap' }}>
-          {['Free to download', 'No credit card required', 'Works offline', 'iOS & Android'].map(f => (
+          {[t('cta_free'), t('cta_nocard'), t('cta_offline'), t('cta_platforms')].map(f => (
             <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#64748b' }}>
               <span style={{ color: '#22c55e' }}>✓</span> {f}
             </div>

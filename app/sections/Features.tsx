@@ -1,21 +1,16 @@
 'use client'
 import { motion } from 'framer-motion'
-
-const features = [
-  { icon: '📍', title: 'Live GPS Tracking', desc: 'Real-time location updates every 30 seconds. See exactly where your loved ones are on a live map.', color: '#4F6EF7', img: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?w=400&q=80' },
-  { icon: '🔔', title: 'Smart Zone Alerts', desc: 'Draw safe zones on a map. Get instant alerts the moment someone enters or leaves — with configurable severity.', color: '#22c55e', img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&q=80' },
-  { icon: '🤖', title: 'AI Assistant', desc: 'Ask in plain language: "Is Ana safe?" or "Any sightings near me?" — AI answers from your live data instantly.', color: '#a855f7', img: 'https://images.unsplash.com/photo-1677442135703-1787eea5ce01?w=400&q=80' },
-  { icon: '🤝', title: 'Community Feeds', desc: 'Post missing person alerts, sightings, and updates. AI auto-categorises every post for fast discovery.', color: '#f59e0b', img: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&q=80' },
-  { icon: '🗺️', title: 'Search Party', desc: 'Coordinate volunteers with live maps, zone assignments, and real-time check-ins. No overlap, no wasted effort.', color: '#ef4444', img: 'https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?w=400&q=80' },
-  { icon: '🔒', title: 'Privacy by Design', desc: 'Your tracker data is yours alone. Row-level security means no other user can ever see your device locations.', color: '#06b6d4', img: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?w=400&q=80' },
-]
+import { useThemeLang } from '../ThemeLangProvider'
+import { useContent } from '../content/useContent'
 
 export default function Features() {
+  const { t } = useThemeLang()
+  const { features } = useContent()
   return (
     <section id="features" style={{ padding: '120px 6vw', background: 'var(--bg-section)' }}>
       <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 72 }}>
-        <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>Everything you need</p>
-        <h2 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 900, letterSpacing: '-1px' }}>Built for real emergencies</h2>
+        <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>{t('features_label')}</p>
+        <h2 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 900, letterSpacing: '-1px' }}>{t('features_headline')}</h2>
       </motion.div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(300px,1fr))', gap: 24 }}>

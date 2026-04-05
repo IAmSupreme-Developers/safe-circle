@@ -1,5 +1,6 @@
 'use client'
 import { SOCIAL_LINKS, FOOTER_LINKS } from '../landing.config'
+import { useThemeLang } from '../ThemeLangProvider'
 
 const SOCIAL_ICONS: Record<keyof typeof SOCIAL_LINKS, string> = {
   twitter: '𝕏', linkedin: 'in', facebook: 'f', youtube: '▶'
@@ -12,6 +13,7 @@ function scrollTo(id: string) {
 }
 
 export default function Footer() {
+  const { t } = useThemeLang()
   return (
     <footer style={{ padding: '60px 6vw 40px', borderTop: '1px solid var(--border)', background: 'var(--bg)' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 48, marginBottom: 60 }}>
@@ -20,7 +22,7 @@ export default function Footer() {
             <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#4F6EF7,#a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🛡️</div>
             <span style={{ fontWeight: 900, fontSize: 18, color: 'var(--fg)' }}>Safe<span style={{ color: '#4F6EF7' }}>Circle</span></span>
           </div>
-          <p style={{ fontSize: 13, color: 'var(--fg-subtle)', lineHeight: 1.7 }}>Community safety platform for families and neighbourhoods. Built with care.</p>
+          <p style={{ fontSize: 13, color: 'var(--fg-subtle)', lineHeight: 1.7 }}>{t('footer_tagline')}</p>
         </div>
 
         {Object.entries(FOOTER_LINKS).map(([title, links]) => (
@@ -39,7 +41,7 @@ export default function Footer() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16, paddingTop: 32, borderTop: '1px solid var(--border)' }}>
-        <p style={{ color: 'var(--fg-subtle)', fontSize: 13 }}>© 2026 SafeCircle. Built for communities that care.</p>
+        <p style={{ color: 'var(--fg-subtle)', fontSize: 13 }}>{t('footer_copy')}</p>
         <div style={{ display: 'flex', gap: 12 }}>
           {(Object.entries(SOCIAL_LINKS) as [keyof typeof SOCIAL_LINKS, string][]).map(([key, href]) => (
             <a key={key} href={href} target="_blank" rel="noopener noreferrer"

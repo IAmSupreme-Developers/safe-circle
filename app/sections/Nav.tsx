@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useThemeLang } from '../ThemeLangProvider'
-import { NAV_LINKS } from '../landing.config'
+import { useContent } from '../content/useContent'
 
 const LANGS = [
   { code: 'en', label: 'EN' }, { code: 'fr', label: 'FR' },
@@ -16,7 +16,8 @@ export default function Nav() {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [langOpen, setLangOpen] = useState(false)
-  const { theme, setTheme, lang, setLang } = useThemeLang()
+  const { theme, setTheme, lang, setLang, t } = useThemeLang()
+  const { navLinks } = useContent()
 
   useEffect(() => {
     const fn = () => setScrolled(window.scrollY > 40)
@@ -54,7 +55,7 @@ export default function Nav() {
 
         {/* Desktop links */}
         <div className="desktop-nav" style={{ display: 'flex', gap: 28, fontSize: 14, color: 'var(--fg-muted)' }}>
-          {NAV_LINKS.map(l => (
+          {navLinks.map(l => (
             <button key={l.label} onClick={() => handleNav(l.section)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', fontSize: 'inherit', padding: 0 }}>
               {l.label}
@@ -85,7 +86,7 @@ export default function Nav() {
           </div>
           <button onClick={() => scrollTo('download')}
             style={{ background: 'linear-gradient(135deg,#4F6EF7,#7c3aed)', color: '#fff', padding: '9px 22px', borderRadius: 999, fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-            Get the App
+            {t('nav_cta')}
           </button>
         </div>
 
@@ -104,7 +105,7 @@ export default function Nav() {
       {/* Mobile menu */}
       {menuOpen && (
       <div style={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 199, background: 'var(--menu-bg)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--border)', padding: '20px 5vw 28px', display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {NAV_LINKS.map(l => (
+          {navLinks.map(l => (
             <button key={l.label} onClick={() => handleNav(l.section)}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fg-muted)', fontSize: 16, padding: '12px 0', textAlign: 'left', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
               {l.label}
@@ -121,7 +122,7 @@ export default function Nav() {
           </div>
           <button onClick={() => { scrollTo('download'); setMenuOpen(false) }}
             style={{ marginTop: 16, background: 'linear-gradient(135deg,#4F6EF7,#7c3aed)', color: '#fff', padding: '14px', borderRadius: 999, fontSize: 15, fontWeight: 700, border: 'none', cursor: 'pointer' }}>
-            Get the App
+            {t('nav_cta')}
           </button>
         </div>
       )}

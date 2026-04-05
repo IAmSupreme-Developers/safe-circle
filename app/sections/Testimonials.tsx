@@ -1,5 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
+import { useThemeLang } from '../ThemeLangProvider'
 
 const testimonials = [
   { name: 'Amara O.', role: 'Mother of 3, Lagos', avatar: 'https://i.pravatar.cc/80?img=47', text: 'My son wandered off at a market. Within 8 minutes of posting, three people had spotted him. SafeCircle is not just an app — it\'s a lifeline.', stars: 5 },
@@ -11,13 +12,12 @@ const testimonials = [
 ]
 
 export default function Testimonials() {
+  const { t } = useThemeLang()
   return (
     <section id="community" style={{ padding: '120px 6vw', background: 'var(--bg-section)', overflow: 'hidden' }}>
       <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 72 }}>
-        <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>Real families, real stories</p>
-        <h2 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 900, letterSpacing: '-1px' }}>
-          Trusted across Africa and beyond
-        </h2>
+        <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>{t('test_label')}</p>
+        <h2 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 900, letterSpacing: '-1px' }}>{t('test_headline')}</h2>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 32, marginTop: 40 }}>
           {[['10,000+', 'Families'], ['50,000+', 'Alerts sent'], ['98%', 'Cases resolved'], ['< 30s', 'Alert speed']].map(([v, l]) => (
             <div key={l} style={{ textAlign: 'center' }}>

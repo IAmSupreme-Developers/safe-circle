@@ -1,21 +1,17 @@
 'use client'
 import { motion, useInView } from 'framer-motion'
+import { useThemeLang } from '../ThemeLangProvider'
+import { useContent } from '../content/useContent'
 import { useRef } from 'react'
 
-const steps = [
-  { n: '01', icon: '📲', title: 'Download & Sign Up', desc: 'Create your account in 60 seconds with email or Google. Your profile is ready instantly.', color: '#4F6EF7' },
-  { n: '02', icon: '📡', title: 'Register a Tracker', desc: 'Enter your device ID and pairing code. The GPS tracker is linked to your account immediately.', color: '#a855f7' },
-  { n: '03', icon: '🗺️', title: 'Draw Safe Zones', desc: 'Tap the map to place zones around home, school, work. Set alert severity per zone.', color: '#22c55e' },
-  { n: '04', icon: '👥', title: 'Join the Community', desc: 'Connect with neighbours. Post alerts, respond to sightings, coordinate search parties.', color: '#f59e0b' },
-  { n: '05', icon: '🤖', title: 'Let AI Help', desc: 'Ask your AI assistant anything about your data. Get smart summaries and action suggestions.', color: '#ef4444' },
-]
-
 export default function HowItWorks() {
+  const { t } = useThemeLang()
+  const { steps } = useContent()
   return (
     <section id="how-it-works" style={{ padding: '120px 6vw' }}>
       <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: 'center', marginBottom: 80 }}>
-        <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>Simple by design</p>
-        <h2 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 900, letterSpacing: '-1px' }}>Up and running in minutes</h2>
+        <p style={{ color: '#4F6EF7', fontWeight: 700, fontSize: 13, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 14 }}>{t('how_label')}</p>
+        <h2 style={{ fontSize: 'clamp(2rem,4vw,3rem)', fontWeight: 900, letterSpacing: '-1px' }}>{t('how_headline')}</h2>
       </motion.div>
 
       <div style={{ position: 'relative' }}>

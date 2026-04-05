@@ -24,18 +24,18 @@ export default function Hero() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(79,110,247,0.1)', border: '1px solid rgba(79,110,247,0.25)', borderRadius: 999, padding: '7px 18px', fontSize: 13, color: '#818cf8', marginBottom: 32 }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4F6EF7', display: 'inline-block', animation: 'ping 1.5s ease-in-out infinite' }} />
-          Trusted by 10,000+ families worldwide
+          {t('hero_badge')}
         </motion.div>
 
         <motion.h1 initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35, duration: 0.8 }}
           style={{ fontSize: 'clamp(2.8rem,6vw,5rem)', fontWeight: 900, lineHeight: 1.08, letterSpacing: '-2px', marginBottom: 28 }}>
-          When every second<br />
+          {t('hero_headline1')}<br />
           <span style={{ background: 'linear-gradient(135deg,#4F6EF7 30%,#a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>{t('tagline')}</span>
         </motion.h1>
 
         <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
           style={{ fontSize: 'clamp(1rem,2vw,1.25rem)', color: '#94a3b8', lineHeight: 1.75, marginBottom: 48, maxWidth: 580, margin: '0 auto 48px' }}>
-          SafeCircle combines real-time GPS tracking, community-powered alerts, and AI assistance — so you're never alone when someone you love needs help.
+          {t('hero_sub')}
         </motion.p>
 
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.65 }}
@@ -44,7 +44,7 @@ export default function Hero() {
             {t('download')} →
           </a>
           <a href="#story" style={{ color: '#94a3b8', padding: '18px 32px', borderRadius: 999, fontSize: 15, fontWeight: 600, border: '1px solid rgba(255,255,255,0.1)', display: 'inline-block' }}>
-            ▶ Watch the story
+            {t('hero_watch')}
           </a>
         </motion.div>
 
@@ -59,7 +59,7 @@ export default function Hero() {
       {/* Scroll indicator */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.5 }}
         style={{ position: 'absolute', bottom: 40, left: '50%', transform: 'translateX(-50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, color: '#334155', fontSize: 12 }}>
-        <span>Scroll to explore</span>
+        <span>{t('hero_scroll')}</span>
         <div style={{ width: 1, height: 48, background: 'linear-gradient(#4F6EF7,transparent)', animation: 'scrollLine 2s ease-in-out infinite' }} />
       </motion.div>
 
