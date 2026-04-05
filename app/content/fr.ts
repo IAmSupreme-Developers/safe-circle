@@ -29,6 +29,11 @@ const fr: Content = {
     { n: '04', icon: '👥', title: 'Rejoindre la communauté', desc: 'Connectez-vous avec vos voisins. Publiez des alertes, répondez aux observations, coordonnez des équipes de recherche.', color: '#f59e0b' },
     { n: '05', icon: '🤖', title: 'Laisser l\'IA aider', desc: 'Posez à votre assistant IA n\'importe quelle question sur vos données. Obtenez des résumés intelligents.', color: '#ef4444' },
   ],
+  footerColumns: [
+    { title: 'Produit', links: [{ label: 'Fonctionnalités', href: '#features' }, { label: 'Comment ça marche', href: '#how-it-works' }, { label: 'Tarifs', href: '#' }, { label: 'Changelog', href: '#' }] },
+    { title: 'Communauté', links: [{ label: 'Blog', href: '#' }, { label: 'Forum', href: '#' }, { label: 'Partenaires', href: '#' }, { label: 'Open Source', href: 'https://github.com' }] },
+    { title: 'Légal', links: [{ label: 'Politique de confidentialité', href: '#' }, { label: 'Conditions d\'utilisation', href: '#' }, { label: 'Cookies', href: '#' }, { label: 'RGPD', href: '#' }] },
+  ],
 }
 
 export default fr

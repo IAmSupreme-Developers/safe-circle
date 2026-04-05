@@ -1,6 +1,7 @@
 'use client'
-import { SOCIAL_LINKS, FOOTER_LINKS } from '../landing.config'
+import { SOCIAL_LINKS } from '../landing.config'
 import { useThemeLang } from '../ThemeLangProvider'
+import { useContent } from '../content/useContent'
 
 const SOCIAL_ICONS: Record<keyof typeof SOCIAL_LINKS, string> = {
   twitter: '𝕏', linkedin: 'in', facebook: 'f', youtube: '▶'
@@ -14,6 +15,7 @@ function scrollTo(id: string) {
 
 export default function Footer() {
   const { t } = useThemeLang()
+  const { footerColumns } = useContent()
   return (
     <footer style={{ padding: '60px 6vw 40px', borderTop: '1px solid var(--border)', background: 'var(--bg)' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 48, marginBottom: 60 }}>
@@ -25,10 +27,10 @@ export default function Footer() {
           <p style={{ fontSize: 13, color: 'var(--fg-subtle)', lineHeight: 1.7 }}>{t('footer_tagline')}</p>
         </div>
 
-        {Object.entries(FOOTER_LINKS).map(([title, links]) => (
-          <div key={title}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg)', marginBottom: 16, letterSpacing: 0.5 }}>{title}</p>
-            {links.map(l => (
+        {footerColumns.map(col => (
+          <div key={col.title}>
+            <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--fg)', marginBottom: 16, letterSpacing: 0.5 }}>{col.title}</p>
+            {col.links.map(l => (
               <button key={l.label} onClick={() => scrollTo(l.href)}
                 style={{ display: 'block', background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--fg-subtle)', marginBottom: 10, padding: 0, textAlign: 'left', transition: 'color 0.2s' }}
                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--fg-muted)')}

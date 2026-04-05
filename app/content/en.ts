@@ -29,6 +29,11 @@ const en: Content = {
     { n: '04', icon: '👥', title: 'Join the Community', desc: 'Connect with neighbours. Post alerts, respond to sightings, coordinate search parties.', color: '#f59e0b' },
     { n: '05', icon: '🤖', title: 'Let AI Help', desc: 'Ask your AI assistant anything about your data. Get smart summaries and action suggestions.', color: '#ef4444' },
   ],
+  footerColumns: [
+    { title: 'Product', links: [{ label: 'Features', href: '#features' }, { label: 'How it works', href: '#how-it-works' }, { label: 'Pricing', href: '#' }, { label: 'Changelog', href: '#' }] },
+    { title: 'Community', links: [{ label: 'Blog', href: '#' }, { label: 'Forum', href: '#' }, { label: 'Partners', href: '#' }, { label: 'Open Source', href: 'https://github.com' }] },
+    { title: 'Legal', links: [{ label: 'Privacy Policy', href: '#' }, { label: 'Terms of Service', href: '#' }, { label: 'Cookie Policy', href: '#' }, { label: 'GDPR', href: '#' }] },
+  ],
 }
 
 export default en
