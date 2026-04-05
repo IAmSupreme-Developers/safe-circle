@@ -19,12 +19,12 @@ export default function CTA() {
           {t('cta_sub')}
         </p>
 
-        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 60 }}>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap', marginBottom: 32 }}>
           {[
-            { icon: '🤖', store: t('cta_google'), name: 'Google Play' },
-            { icon: '🍎', store: t('cta_apple'), name: 'App Store' },
+            { icon: '🤖', store: t('cta_google'), name: 'Google Play', href: '#' },
+            { icon: '🍎', store: t('cta_apple'), name: 'App Store', href: '#' },
           ].map(b => (
-            <motion.a key={b.name} href="#" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
+            <motion.a key={b.name} href={b.href} whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}
               style={{ display: 'flex', alignItems: 'center', gap: 14, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#f1f5f9', padding: '16px 32px', borderRadius: 16, fontWeight: 700, backdropFilter: 'blur(8px)' }}>
               <span style={{ fontSize: 28 }}>{b.icon}</span>
               <div style={{ textAlign: 'left' }}>
@@ -35,6 +35,14 @@ export default function CTA() {
           ))}
         </div>
 
+        {/* Direct APK download */}
+        <div style={{ marginBottom: 48 }}>
+          <motion.a href="/releases/beta-release.apk" download whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(79,110,247,0.12)', border: '1px solid rgba(79,110,247,0.3)', color: '#818cf8', padding: '12px 28px', borderRadius: 999, fontSize: 14, fontWeight: 600 }}>
+            <span>⬇️</span> {t('cta_direct')}
+          </motion.a>
+          <p style={{ fontSize: 12, color: '#334155', marginTop: 8 }}>{t('cta_direct_note')}</p>
+        </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 40, flexWrap: 'wrap' }}>
           {[t('cta_free'), t('cta_nocard'), t('cta_offline'), t('cta_platforms')].map(f => (
             <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#64748b' }}>
