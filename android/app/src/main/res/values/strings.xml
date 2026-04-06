@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
     <string name="app_name">safe-circle-tracker</string>
-    <string name="title_activity_main">safe-circle</string>
+    <string name="title_activity_main">safe-circle-tracker</string>
     <string name="package_name">developers.iamsupreme.safecircle.tracker</string>
     <string name="custom_url_scheme">developers.iamsupreme.safecircle.tracker</string>
 </resources>
