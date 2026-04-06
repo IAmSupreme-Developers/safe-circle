@@ -2,11 +2,13 @@
 
 # 📡 SafeCircle — Tracker Device
 
-**The device-side app of SafeCircle.**
-Worn or carried by the person being monitored — continuously broadcasts GPS location so guardians can track in real time via the SafeCircle app.
+**The device-side app of SafeCircle.**  
+Worn or carried by the person being monitored — maintains a persistent socket connection to the server and streams live GPS, battery, and network status to the guardian app in real time.
 
-> 🛡️ The guardian app lives on the `main` branch.
-> 🖥️ The server (API routes) lives on the `server` branch.
+> 🛡️ The guardian app lives on the `main` branch.  
+> 🖥️ The server (Socket.IO + API routes) lives on the `server` branch.  
+> 📋 Socket events reference → `events.md`  
+> 🔧 Server setup guide → `updateserver.md`
 
 </div>
 
@@ -19,15 +21,21 @@ Admin inserts tracker row (device_id + code) in Supabase
         ↓
 Device app launches → reads credentials from env vars (or manual entry)
         ↓
-Shows device ID + code on screen
+PairScreen shows device ID + code for guardian to scan/enter
         ↓
-Guardian registers device in the SafeCircle app
+Guardian registers device in the SafeCircle app → owner_id set in DB
         ↓
-Device taps "Check Registration Status" → server confirms owner_id set
+Device taps "Check Registration Status" → HTTP check confirms owner_id set
         ↓
-🟢 Background GPS broadcasting starts
+🟢 Socket connection established to server (/tracker namespace)
         ↓
-Every location ping is HMAC-signed → sent to server → written to Supabase
+Background GPS watcher fires on movement (DISTANCE_FILTER_METERS)
+        ↓
+Each location ping is HMAC-signed → emitted via socket → relayed live to guardian app
+        ↓
+Battery + network status emitted on connect and on change
+        ↓
+On disconnect → server saves last known location to Supabase
 ```
 
 ---
@@ -37,7 +45,7 @@ Every location ping is HMAC-signed → sent to server → written to Supabase
 ### 1 · Clone & Install
 
 ```bash
-git checkout track-device
+git checkout track-device-2
 npm install
 ```
 
@@ -48,18 +56,16 @@ npm install
 
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # Device identity — must exist in the trackers table (inserted by admin)
 NEXT_PUBLIC_DEVICE_ID=SC-ABC123
 NEXT_PUBLIC_DEVICE_CODE=XY99ZZ
 
-# Server URL — leave empty for local dev, set to deployed URL in production
-NEXT_PUBLIC_SERVER_URL=
+# Server URL — Socket.IO server (server branch)
+NEXT_PUBLIC_SERVER_URL=http://localhost:3000
 
 # HMAC secret — must match DEVICE_HMAC_SECRET on the server
 NEXT_PUBLIC_DEVICE_HMAC_SECRET=your-long-random-secret
-DEVICE_HMAC_SECRET=your-long-random-secret
 ```
 
 ### 3 · Insert Tracker Row in Supabase
@@ -84,24 +90,20 @@ npm run dev
 
 ```
 app/
-  page.tsx                    → Orchestrator (pair vs broadcast)
+  page.tsx                    → Orchestrator (PairScreen vs BroadcastScreen)
   layout.tsx                  → Root layout
   globals.css                 → Theme variables
   components/
-    PairScreen.tsx            → Setup + waiting for registration
-    BroadcastScreen.tsx       → Live GPS broadcasting UI
+    PairScreen.tsx            → Setup + waiting for guardian registration
+    BroadcastScreen.tsx       → Live broadcasting UI (status, last ping, commands)
     ui.tsx                    → Shared UI primitives (Screen, Btn, DeviceIcon)
-  api/
-    device/
-      check/route.ts          → Registration status check (public, no auth)
-      location/route.ts       → Receives signed location pings, writes to DB
 lib/
   config.ts                   → ⚙️  All tuneable constants
-  device.ts                   → All device logic (credentials, pairing, location)
+  device.ts                   → All device logic (socket, location, battery, network, commands)
   hmac.ts                     → HMAC-SHA256 sign + verify utilities
-  api.ts                      → API response helpers
-  supabase.ts                 → Supabase anon client
-  supabase-admin.ts           → Supabase service role client (server-side only)
+  supabase.ts                 → Supabase anon client (registration check only)
+events.md                     → Full Socket.IO events reference
+updateserver.md               → Server setup guide
 ```
 
 ---
@@ -114,12 +116,11 @@ All tuneable constants live in **`lib/config.ts`**.
 |---|---|---|
 | `DISTANCE_FILTER_METERS` | `10` | Min movement (m) before a location ping fires |
 | `GPS_TIMEOUT_MS` | `10000` | GPS acquisition timeout (ms) |
-| `FOREGROUND_PING_INTERVAL_MS` | `5000` | Fallback ping interval on web (ms) |
+| `FOREGROUND_PING_INTERVAL_MS` | `5000` | Fallback ping interval when background tracking unavailable (ms) |
 | `BG_NOTIFICATION_TITLE` | `SafeCircle Active` | Android notification title |
 | `BG_NOTIFICATION_MESSAGE` | `SafeCircle is tracking...` | Android notification body |
-| `STORAGE_KEY_PAIRED_DEVICE` | `sc_device` | localStorage key for paired device state |
-| `SERVER_URL` | `http://localhost:3000` | Base URL for API calls |
-| `DEVICE_HMAC_SECRET` | *(env var)* | Shared secret for request signing |
+| `SERVER_URL` | `http://localhost:3000` | Socket.IO server URL |
+| `DEVICE_HMAC_SECRET` | *(env var)* | Shared secret for signing location payloads |
 
 ---
 
@@ -141,7 +142,17 @@ All tuneable constants live in **`lib/config.ts`**.
 | **Native background** | `@capacitor-community/background-geolocation` | Android/iOS — survives screen lock |
 | **Foreground fallback** | Interval ping every `FOREGROUND_PING_INTERVAL_MS` | Web/dev — stops when screen locks |
 
-Location pings are **HMAC-SHA256 signed** and sent to `/api/device/location`. The server verifies the signature and timestamp before writing to Supabase. Direct Supabase access from the device is not used.
+Location is only emitted when the device moves by at least `DISTANCE_FILTER_METERS`. No polling when stationary.
+
+---
+
+## 📊 Live Data Streamed to Guardian
+
+| Data | Trigger | Saved to DB |
+|---|---|---|
+| Location (lat, lng, accuracy, altitude, speed, heading) | On movement | On disconnect only |
+| Battery level + charging state | On connect + every 60s if changed ≥5% | No |
+| Network status (connected, type) | On connect + on change | No |
 
 ---
 
@@ -150,25 +161,34 @@ Location pings are **HMAC-SHA256 signed** and sent to `/api/device/location`. Th
 | Concern | How it's handled |
 |---|---|
 | Location spoofing | HMAC-SHA256 signature on every ping — tampered payloads rejected |
-| Replay attacks | 30-second timestamp expiry window |
-| Code exposure | `code` column never returned to device — registration check via server API only |
+| Replay attacks | 30-second timestamp expiry window on location events |
+| Socket auth | HMAC-signed token verified on every connection attempt |
 | Unauthorised claiming | Device can only be claimed once — `owner_id` locked to first guardian |
-| Data in transit | HTTPS (TLS) encrypts all traffic |
+| Data in transit | HTTPS/WSS (TLS) encrypts all traffic |
+
+---
+
+## 🎮 Remote Commands
+
+The guardian app can send commands to the tracker via the server:
+
+| Command | Effect on device |
+|---|---|
+| `alarm` | Vibrates 3× with heavy haptic impact |
+| `ping` | Immediately grabs GPS and emits location |
+| `update_interval` | Updates foreground fallback ping interval |
 
 ---
 
 ## 🤖 Native Setup (Capacitor)
 
-Required to enable background location on a real device:
-
 ```bash
-npx cap init "SafeCircle Tracker" "com.safecircle.tracker"
 npx cap add android
 npm run build && npx cap sync android
 npx cap open android
 ```
 
-See **`TO-NOTE.md`** for required Android permissions and gotchas.
+See **`TO-NOTE.md`** for required Android permissions.
 
 ---
 
