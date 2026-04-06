@@ -15,6 +15,9 @@ const supabase = createClient(
 )
 const HMAC_SECRET = process.env.DEVICE_HMAC_SECRET
 
+// Shared in-memory Set — accessible by API routes via global
+global.onlineTrackers = global.onlineTrackers || new Set()
+
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
     handle(req, res, parse(req.url, true))
@@ -55,6 +58,7 @@ app.prepare().then(() => {
   trackerNS.on('connection', (socket) => {
     const { trackerId } = socket.data
     socket.join(`tracker:${trackerId}`)
+    global.onlineTrackers.add(trackerId)
     guardianNS.to(`guardian:${trackerId}`).emit('tracker:online', { trackerId })
     console.log(`[tracker] connected: ${trackerId}`)
 
@@ -98,6 +102,7 @@ app.prepare().then(() => {
         }).eq('id', trackerId)
       }
       guardianNS.to(`guardian:${trackerId}`).emit('tracker:offline', { trackerId })
+      global.onlineTrackers.delete(trackerId)
     })
   })
 
