@@ -10,14 +10,24 @@ type Props = {
   className?: string
 }
 
-function makeIcon(color: string, L: any) {
+function makeIcon(color: string, L: any, online?: boolean) {
+  const pulse = online ? `
+    <div style="
+      position:absolute;top:-4px;left:-4px;
+      width:22px;height:22px;border-radius:50%;
+      background:${color};opacity:0.3;
+      animation:map-ping 1.5s ease-in-out infinite;
+    "></div>` : ''
   return L.divIcon({
     className: '',
-    html: `<div style="
-      width:14px;height:14px;border-radius:50%;
-      background:${color};border:2px solid #fff;
-      box-shadow:0 0 0 2px ${color};
-    "></div>`,
+    html: `<div style="position:relative;width:14px;height:14px">
+      ${pulse}
+      <div style="
+        position:relative;width:14px;height:14px;border-radius:50%;
+        background:${color};border:2px solid #fff;
+        box-shadow:0 0 0 2px ${color};
+      "></div>
+    </div>`,
     iconSize: [14, 14],
     iconAnchor: [7, 7],
   })
@@ -66,9 +76,10 @@ export default function MapView({ points, zones = [], height = 300, className = 
 
       points.forEach(p => {
         const color = p.color ?? PIN_COLORS[p.type] ?? PIN_COLORS.tracker
-        const icon = makeIcon(color, L)
+        const icon = makeIcon(color, L, p.online)
         if (existing.has(p.id)) {
           existing.get(p.id).setLatLng([p.lat, p.lng])
+          existing.get(p.id).setIcon(icon)
         } else {
           const m = L.marker([p.lat, p.lng], { icon })
             .addTo(map)
@@ -129,6 +140,10 @@ export default function MapView({ points, zones = [], height = 300, className = 
         @keyframes zone-pulse {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0.4; }
+        }
+        @keyframes map-ping {
+          0%, 100% { transform: scale(1); opacity: 0.3; }
+          50%       { transform: scale(2); opacity: 0; }
         }
       `}</style>
       <div ref={containerRef} className={className}

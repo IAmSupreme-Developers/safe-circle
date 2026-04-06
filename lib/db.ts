@@ -22,6 +22,7 @@ export function createDb(token: string) {
     },
     trackers: {
       list: () => r('/api/trackers'),
+      online: () => r('/api/trackers/online'),
       register: (data: { label: string; device_id: string; code: string }) =>
         r('/api/trackers', { method: 'POST', ...body(data) }),
       update: (id: string, data: object) =>

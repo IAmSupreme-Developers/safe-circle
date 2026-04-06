@@ -14,7 +14,24 @@ export type Tracker = {
   is_active: boolean
   last_lat: number | null
   last_lng: number | null
+  last_altitude: number | null
+  last_speed: number | null
+  last_heading: number | null
   last_seen: string | null
+}
+
+// Live socket state — not persisted, held in component memory
+export type TrackerLiveState = {
+  is_online: boolean
+  battery?: { level: number; charging: boolean }
+  network?: { connected: boolean; type: string }
+  // live location overrides DB values while connected
+  live_lat?: number
+  live_lng?: number
+  live_accuracy?: number
+  live_speed?: number | null
+  live_heading?: number | null
+  live_timestamp?: string
 }
 
 export type Profile = {
@@ -60,6 +77,7 @@ export type MapPoint = {
   label: string
   type: 'tracker' | 'guardian' | 'search-party'
   color?: string
+  online?: boolean
 }
 
 export type SafeZone = {

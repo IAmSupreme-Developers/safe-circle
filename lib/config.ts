@@ -3,6 +3,9 @@
  * All tuneable constants live here. Edit this file to control app behaviour.
  */
 
+/** SafeCircle server base URL */
+export const SERVER_URL = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:3000'
+
 // --- Dashboard ---
 /** Number of recent alerts shown on the dashboard */
 export const DASHBOARD_ALERT_LIMIT = 5
