@@ -43,7 +43,7 @@ export default function AIAssistant() {
     setMsgs(m => [...m, { role: 'user', text: question }])
     setLoading(true)
     try {
-      const res = await fetch('/api/ai/chat', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/ai/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ question }),
