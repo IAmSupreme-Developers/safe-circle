@@ -16,8 +16,9 @@ const supabase = createClient(
 )
 const HMAC_SECRET = process.env.DEVICE_HMAC_SECRET
 
-// Shared in-memory Set — accessible by API routes via global
+// Shared in-memory state
 global.onlineTrackers = global.onlineTrackers || new Set()
+global.trackerLocations = global.trackerLocations || new Map() // trackerId → last location
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
@@ -67,7 +68,10 @@ app.prepare().then(() => {
     socket.join(`tracker:${trackerId}`)
     global.onlineTrackers.add(trackerId)
     guardianNS.to(`guardian:${trackerId}`).emit('tracker:online', { trackerId })
-    console.log(`[tracker] connected: ${trackerId}`)
+    console.log(`[tracker:connect] id=${trackerId} socket=${socket.id}`)
+
+    // Request immediate location on connect
+    socket.emit('command', { cmd: 'ping' })
 
     socket.on('device:location', (data) => {
       const { lat, lng, accuracy, altitude, altitudeAccuracy, speed, heading, simulated, timestamp, signature } = data
@@ -77,10 +81,12 @@ app.prepare().then(() => {
       if (expected !== signature) return
       // Reject stale (30s window)
       if (Date.now() - new Date(timestamp).getTime() > 30_000) return
-      // Hold in memory
-      socket.data.lastLocation = { lat, lng, accuracy, altitude, altitudeAccuracy, speed, heading, simulated, timestamp }
+      // Store in both socket and global map
+      const location = { lat, lng, accuracy, altitude, altitudeAccuracy, speed, heading, simulated, timestamp }
+      socket.data.lastLocation = location
+      global.trackerLocations.set(trackerId, location)
       // Relay to guardian
-      guardianNS.to(`guardian:${trackerId}`).emit('tracker:location', { trackerId, ...socket.data.lastLocation })
+      guardianNS.to(`guardian:${trackerId}`).emit('tracker:location', { trackerId, ...location })
       socket.emit('ack')
     })
 
@@ -93,35 +99,53 @@ app.prepare().then(() => {
     })
 
     socket.on('disconnect', async () => {
-      console.log(`[tracker] disconnected: ${trackerId}`)
-      const last = socket.data.lastLocation
+      console.log(`[tracker:disconnect] id=${trackerId} socket=${socket.id}`)
+      const last = global.trackerLocations.get(trackerId)
       if (last) {
         await supabase.from('trackers').update({
-          last_lat: last.lat,
-          last_lng: last.lng,
-          last_altitude: last.altitude,
-          last_altitude_accuracy: last.altitudeAccuracy,
-          last_speed: last.speed,
-          last_heading: last.heading,
-          last_simulated: last.simulated,
-          accuracy: last.accuracy,
+          last_lat: last.lat, last_lng: last.lng,
+          last_altitude: last.altitude, last_altitude_accuracy: last.altitudeAccuracy,
+          last_speed: last.speed, last_heading: last.heading,
+          last_simulated: last.simulated, accuracy: last.accuracy,
           last_seen: last.timestamp,
         }).eq('id', trackerId)
       }
-      guardianNS.to(`guardian:${trackerId}`).emit('tracker:offline', { trackerId })
       global.onlineTrackers.delete(trackerId)
+      guardianNS.to(`guardian:${trackerId}`).emit('tracker:offline', { trackerId })
     })
   })
 
   // ── Guardian connection ───────────────────────────────────────────────────
   guardianNS.on('connection', (socket) => {
     const { userId } = socket.data
-    console.log(`[guardian] connected: ${userId}`)
+    console.log(`[guardian:connect] userId=${userId} socket=${socket.id}`)
+    socket.on('disconnect', () => console.log(`[guardian:disconnect] userId=${userId} socket=${socket.id}`))
 
     socket.on('guardian:subscribe', async ({ trackerId }) => {
-      const { data } = await supabase.from('trackers').select('id').eq('id', trackerId).eq('owner_id', userId).single()
+      const { data } = await supabase.from('trackers')
+        .select('id, last_lat, last_lng, last_altitude, last_altitude_accuracy, last_speed, last_heading, last_simulated, accuracy, last_seen')
+        .eq('id', trackerId).eq('owner_id', userId).single()
       if (!data) return
       socket.join(`guardian:${trackerId}`)
+
+      // Send current online status
+      const isOnline = global.onlineTrackers.has(trackerId)
+      if (isOnline) socket.emit('tracker:online', { trackerId })
+
+      // Send location: prefer in-memory (live), fall back to DB (last known)
+      const memLocation = global.trackerLocations.get(trackerId)
+      if (memLocation) {
+        socket.emit('tracker:location', { trackerId, ...memLocation })
+      } else if (data.last_lat && data.last_lng) {
+        socket.emit('tracker:location', {
+          trackerId,
+          lat: data.last_lat, lng: data.last_lng,
+          altitude: data.last_altitude, altitudeAccuracy: data.last_altitude_accuracy,
+          speed: data.last_speed, heading: data.last_heading,
+          simulated: data.last_simulated, accuracy: data.accuracy,
+          timestamp: data.last_seen,
+        })
+      }
     })
 
     socket.on('guardian:unsubscribe', ({ trackerId }) => {
