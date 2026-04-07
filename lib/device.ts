@@ -136,7 +136,7 @@ export async function connectSocket(trackerId: string, cb: SocketCallbacks): Pro
 
   const auth = await buildAuthHeader(trackerId)
 
-  socket = io(SERVER_URL, {
+  socket = io(`${SERVER_URL}/tracker`, {
     transports: ['websocket'],
     auth: { token: auth },
     reconnection: true,
@@ -144,6 +144,7 @@ export async function connectSocket(trackerId: string, cb: SocketCallbacks): Pro
   })
 
   socket.on('connect', () => {
+    console.log('[tracker socket] connected:', socket?.id)
     cb.onStatus('broadcasting')
     lastBatteryLevel = -1
     emitBattery(trackerId)
@@ -155,7 +156,10 @@ export async function connectSocket(trackerId: string, cb: SocketCallbacks): Pro
     stopDeviceListeners()
   })
 
-  socket.on('connect_error', () => cb.onStatus('error'))
+  socket.on('connect_error', (e) => {
+    console.error('[tracker socket] connect_error:', e.message)
+    cb.onStatus('error')
+  })
 
   socket.on('command', (data: { cmd: string; payload?: any }) => {
     cb.onCommand(data.cmd, data.payload)
