@@ -30,6 +30,9 @@ function getSocket(token: string): Socket {
       transports: ['websocket'],
       reconnection: true,
     })
+    socket.on('connect', () => console.log('[guardian socket] connected'))
+    socket.on('connect_error', (e) => console.error('[guardian socket] connect_error:', e.message))
+    socket.on('disconnect', (reason) => console.log('[guardian socket] disconnected:', reason))
   }
   return socket
 }
