@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { ok, notFound } from '@/lib/api'
 
+
 // Public endpoint — no auth required, used by the tracker device app
 // Returns only id + label, never exposes code or owner details
 export async function GET(req: NextRequest) {

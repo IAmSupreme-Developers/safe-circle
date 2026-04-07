@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
-import { withAuth, ok, badRequest, serverError } from '@/lib/api'
+import { withAuth, ok, badRequest, serverError, preflight } from '@/lib/api'
 import { classifyPost } from '@/lib/gemini'
+
 
 export const GET = async (req: NextRequest) => {
   const limit = req.nextUrl.searchParams.get('limit')

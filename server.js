@@ -21,6 +21,12 @@ global.onlineTrackers = global.onlineTrackers || new Set()
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
+    // Handle CORS preflight
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    console.log(`[${req.method}] ${req.url} | Origin: ${req.headers.origin ?? 'none'}`)
+    if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return }
     handle(req, res, parse(req.url, true))
   })
 

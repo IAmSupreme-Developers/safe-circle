@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { withAuth, ok, err, notFound, conflict, badRequest, serverError } from '@/lib/api'
+
 import type { User } from '@supabase/supabase-js'
 
 export const GET = withAuth(async (_req, user) => {

@@ -3,6 +3,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 import { verifyPayload } from '@/lib/hmac'
 import { ok, err, badRequest, serverError } from '@/lib/api'
 
+
 export async function POST(req: NextRequest) {
   const body = await req.json()
   const { trackerId, lat, lng, accuracy, timestamp, signature } = body

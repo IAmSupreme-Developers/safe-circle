@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { withAuth, ok, badRequest, serverError } from '@/lib/api'
+
 import { runAI } from '@/lib/gemini'
 
 export const POST = withAuth(async (req: NextRequest, user) => {

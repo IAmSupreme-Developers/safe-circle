@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { withAuth, ok, serverError } from '@/lib/api'
 
+
 export const GET = withAuth(async (req: NextRequest, user) => {
   const limit = req.nextUrl.searchParams.get('limit')
   let q = supabaseAdmin.from('alerts').select('*').eq('owner_id', user.id).order('created_at', { ascending: false })

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { withAuth, ok, serverError } from '@/lib/api'
 
+
 export const PATCH = withAuth(async (req: NextRequest, user, { zoneId }) => {
   const body = await req.json()
   const { error } = await supabaseAdmin

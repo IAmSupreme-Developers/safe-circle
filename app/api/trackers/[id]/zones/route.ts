@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { withAuth, ok, badRequest, serverError } from '@/lib/api'
 
+
 export const GET = withAuth(async (_req, user, { id: trackerId }) => {
   const { data, error } = await supabaseAdmin
     .from('safe_zones').select('*').eq('tracker_id', trackerId).eq('owner_id', user.id)

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { withAuth, ok, serverError } from '@/lib/api'
 
+
 export const GET = withAuth(async (_req, user) => {
   const { data, error } = await supabaseAdmin.from('profiles').select('*').eq('id', user.id).single()
   if (error) return serverError(error.message)

@@ -5,11 +5,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Match all API routes
         source: "/api/:path*",
         headers: [
-          { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "*" }, // Use a specific origin in production, not '*'
+          { key: "Access-Control-Allow-Origin", value: "*" },
           { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT,OPTIONS" },
           { key: "Access-Control-Allow-Headers", value: "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
         ],
@@ -19,7 +17,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true, // REQUIRED for static export
   },
-  allowedDevOrigins: ['192.168.1.151']
+  allowedDevOrigins: ['https://3253-129-0-84-2.ngrok-free.app']
 };
 
 export default nextConfig;

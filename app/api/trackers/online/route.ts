@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { withAuth, ok, serverError } from '@/lib/api'
 
+
 export const GET = withAuth(async (_req, user) => {
   // Get all tracker IDs owned by this user
   const { data, error } = await supabaseAdmin

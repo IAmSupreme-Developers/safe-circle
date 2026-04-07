@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin'
 import { withAuth, ok, notFound, serverError } from '@/lib/api'
 
+
 export const GET = async (_req: Request, { params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params
   const { data, error } = await supabaseAdmin
