@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import '@/lib/global'
 import { createServer } from 'http';
 import { parse } from 'url';
@@ -25,9 +26,9 @@ app.prepare().then(() => {
             const parsedUrl = parse(req.url!, true);
             await handle(req, res, parsedUrl);
         } catch (err) {
-        console.error('Error occurred handling', req.url, err);
-        res.statusCode = 500;
-        res.end('internal server error');
+            console.error('Error occurred handling', req.url, err);
+            res.statusCode = 500;
+            res.end('internal server error');
         }
     });
 
@@ -45,7 +46,7 @@ app.prepare().then(() => {
     })
     .listen(port, () => {
         console.log(`> Ready on http://${hostname}:${port}`);
-        console.log(`> Socket.IO ready on path: /api/socket/io`);
+        console.log(`> Socket.IO ready on path: /`);
     });
 
 })
