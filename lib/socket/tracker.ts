@@ -33,11 +33,13 @@ export const initializeTrackerHandlers = (io: SocketIOServer) => {
         global.onlineTrackers.add(trackerId)
         guardianNS.to(`guardian:${trackerId}`).emit('tracker:online', { trackerId })
         console.log(`[tracker:connect] id=${trackerId} socket=${socket.id}`)
+        let pingCount = 0
+        const SAVE_EVERY = 1 // save to DB every 5 location pings
     
         // Request immediate location on connect
         socket.emit('command', { cmd: 'ping' })
     
-        socket.on('device:location', (data) => {
+        socket.on('device:location', async (data) => {
           const { lat, lng, accuracy, altitude, altitudeAccuracy, speed, heading, simulated, timestamp, signature } = data
           // Verify HMAC
           const payload = JSON.stringify({ trackerId, lat, lng, accuracy, timestamp })
@@ -52,6 +54,17 @@ export const initializeTrackerHandlers = (io: SocketIOServer) => {
           // Relay to guardian
           guardianNS.to(`guardian:${trackerId}`).emit('tracker:location', { trackerId, ...location })
           socket.emit('ack')
+          // Periodic DB save every SAVE_EVERY pings
+          pingCount++
+          if (pingCount % SAVE_EVERY === 0) {
+            await supabase.from('trackers').update({
+              last_lat: lat, last_lng: lng,
+              last_altitude: altitude, last_altitude_accuracy: altitudeAccuracy,
+              last_speed: speed, last_heading: heading,
+              last_simulated: simulated, accuracy,
+              last_seen: timestamp,
+            }).eq('id', trackerId)
+          }
         })
     
         socket.on('device:battery', (data) => {
