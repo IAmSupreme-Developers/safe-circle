@@ -12,6 +12,55 @@ import { useTrackerSocket, sendCommand } from '@/lib/trackerSocket'
 const EMPTY_FORM = { label: '', device_id: '', code: '' }
 type Db = ReturnType<typeof createDb>
 
+// ── Device Carousel ───────────────────────────────────────────────────────────
+function DeviceCarousel() {
+  const [idx, setIdx] = useState(0)
+  // Placeholder images - replace with actual device images later
+  const devices = [
+    { id: 1, name: 'GPS Tracker Pro', image: '/devices/tracker-1.png' },
+    { id: 2, name: 'Mini Tracker', image: '/devices/tracker-2.png' },
+    { id: 3, name: 'Smart Tag', image: '/devices/tracker-3.png' },
+  ]
+
+  const ref = (node: HTMLDivElement | null) => {
+    if (!node) return
+    const onScroll = () => setIdx(Math.round(node.scrollLeft / node.offsetWidth))
+    node.addEventListener('scroll', onScroll, { passive: true })
+  }
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+      <div ref={ref} className="flex overflow-x-auto snap-x snap-mandatory" style={{ scrollbarWidth: 'none' }}>
+        {devices.map((device) => (
+          <div key={device.id} className="snap-center flex-shrink-0 w-full">
+            <div className="relative" style={{ height: 200, background: 'linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%)' }}>
+              {/* Placeholder for device image */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center space-y-2">
+                  <div className="w-24 h-24 mx-auto rounded-2xl flex items-center justify-center" 
+                    style={{ background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)' }}>
+                    <MapPin size={40} style={{ color: 'rgba(255,255,255,0.9)' }} />
+                  </div>
+                  <p className="font-semibold text-white">{device.name}</p>
+                  <p className="text-xs" style={{ color: 'rgba(255,255,255,0.8)' }}>Real-time GPS Tracking</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {devices.length > 1 && (
+        <div className="flex justify-center gap-1.5 py-3">
+          {devices.map((_, i) => (
+            <span key={i} className="h-2 w-2 rounded-full transition-all"
+              style={{ background: i === idx ? 'var(--primary)' : 'var(--border)' }} />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Signal bars based on GPS accuracy ────────────────────────────────────────
 function SignalBars({ accuracy, online }: { accuracy?: number; online: boolean }) {
   const bars = !online ? 0 : !accuracy ? 1 : accuracy < 10 ? 4 : accuracy < 30 ? 3 : accuracy < 60 ? 2 : 1
@@ -249,6 +298,9 @@ export default function TrackingPage() {
 
   return (
     <div className="px-4 py-6 space-y-4 pb-24">
+      {/* Device Carousel */}
+      <DeviceCarousel />
+
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Trackers</h1>
         <div className="flex items-center gap-2">
