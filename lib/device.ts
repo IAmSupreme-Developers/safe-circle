@@ -136,7 +136,8 @@ export async function connectSocket(trackerId: string, cb: SocketCallbacks): Pro
 
   const auth = await buildAuthHeader(trackerId)
 
-  socket = io(`${SERVER_URL}/tracker`, {
+  socket = io(`${SERVER_URL}`, {
+    path: "/tracker",
     transports: ['websocket'],
     auth: { token: auth },
     reconnection: true,
